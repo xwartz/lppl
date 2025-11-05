@@ -1,7 +1,13 @@
 import React from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { useTheme } from "../lib/theme"
+import type { ThemePref } from "../lib/theme"
 
-interface Point { date: string; actual: number; fitted?: number | null }
+interface Point {
+  date: string
+  actual: number
+  fitted?: number | null
+}
 
 interface Props {
   data: Point[]
@@ -10,19 +16,82 @@ interface Props {
 
 const PriceChart: React.FC<Props> = ({ data, priceFormatter }) => {
   const xInterval = data.length > 10 ? Math.floor(data.length / 10) : 0
+  const { theme } = useTheme()
+  // detect system dark when pref === 'system'
+  const systemDark =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  const isDark =
+    theme === ("dark" as ThemePref) ||
+    (theme === ("system" as ThemePref) && systemDark)
+
+  const gridStroke = isDark ? "rgba(255,255,255,0.04)" : "#e0e0e0"
+  const axisStroke = isDark ? "#9ca3af" : "#374151"
+  const tooltipStyle = isDark
+    ? {
+        backgroundColor: "rgba(17,24,39,0.92)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 8,
+        color: "#e5e7eb",
+      }
+    : {
+        backgroundColor: "rgba(255,255,255,0.96)",
+        border: "1px solid rgba(0,0,0,0.06)",
+        borderRadius: 8,
+      }
+
   return (
     <ResponsiveContainer width="100%" height={400}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-        <XAxis dataKey="date" stroke="#9ca3af" tick={{ fontSize: 12 }} interval={xInterval} />
-        <YAxis stroke="#9ca3af" tick={{ fontSize: 12 }} domain={["dataMin", "dataMax"]} tickFormatter={(v) => priceFormatter(Number(v))} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+        <XAxis
+          dataKey="date"
+          stroke={axisStroke}
+          tick={{ fontSize: 12 }}
+          interval={xInterval}
+        />
+        <YAxis
+          stroke={axisStroke}
+          tick={{ fontSize: 12 }}
+          domain={["dataMin", "dataMax"]}
+          tickFormatter={(v) => priceFormatter(Number(v))}
+        />
         <Tooltip
-          contentStyle={{ backgroundColor: 'rgba(255,255,255,0.96)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 8 }}
-          formatter={(value: number | string) => (typeof value === 'number' ? priceFormatter(value) : value)}
+          contentStyle={tooltipStyle}
+          formatter={(value: number | string) =>
+            typeof value === "number" ? priceFormatter(value) : value
+          }
         />
         <Legend />
-        <Line type="monotone" dataKey="actual" stroke="#f59e0b" strokeWidth={2} name="实际价格" dot={false} />
-        <Line type="monotone" dataKey="fitted" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" name="LPPL 拟合" dot={false} />
+        {
+          // read semantic colors from CSS variables so chart matches theme tokens
+        }
+        <Line
+          type="monotone"
+          dataKey="actual"
+          stroke={
+            getComputedStyle(document.documentElement).getPropertyValue(
+              "--warning"
+            ) || "#f59e0b"
+          }
+          strokeWidth={2}
+          name="实际价格"
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="fitted"
+          stroke={
+            getComputedStyle(document.documentElement).getPropertyValue(
+              "--accent"
+            ) || "#8b5cf6"
+          }
+          strokeWidth={2}
+          strokeDasharray="5 5"
+          name="LPPL 拟合"
+          dot={false}
+        />
       </LineChart>
     </ResponsiveContainer>
   )

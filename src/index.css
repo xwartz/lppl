@@ -1,3 +1,87 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Theme variables and shared component classes */
+:root {
+  --bg: #ffffff;
+  --bg-2: #f8fafc;
+  /* make cards slightly lighter and panels slightly tinted so blocks separate clearly in light mode */
+  --card-bg: #ffffff;
+  /* solid white for main cards */
+  --panel-bg: #f8fafc;
+  /* subtle off-white/tint to separate panels */
+  --text: #0f172a;
+  /* slate-900 */
+  --muted: #6b7280;
+  /* slate-500 */
+  --border: rgba(15, 23, 42, 0.08);
+  /* slate-500 */
+  --border: rgba(15, 23, 42, 0.06);
+  --accent: #7c3aed;
+  /* purple-600 */
+  --accent-2: #6b21a8;
+}
+
+/* semantic colors used across components (status / info) */
+:root {
+  --danger: #ef4444;
+  /* red-500 */
+  --danger-2: #f87171;
+  /* red-400 */
+  --warning: #f59e0b;
+  /* amber-500 */
+  --warning-2: #fbbf24;
+  /* amber-400 */
+  --success: #10b981;
+  /* emerald-500 */
+  --success-2: #34d399;
+  /* emerald-400 */
+  --info: #2563eb;
+  /* blue-600 */
+  --info-2: #1d4ed8;
+  /* blue-700 */
+}
+
+.dark {
+  --bg: #0b1220;
+  /* dark page */
+  --bg-2: #071026;
+  --card-bg: rgba(17, 24, 39, 0.6);
+  --panel-bg: rgba(255, 255, 255, 0.02);
+  --text: #e6eef8;
+  --muted: #9ca3af;
+  --border: rgba(255, 255, 255, 0.06);
+  --accent: #8b5cf6;
+  --accent-2: #7c3aed;
+
+  /* dark variants for semantic colors */
+  --danger: #f87171;
+  /* softer red in dark */
+  --danger-2: #fb7185;
+  --warning: #f59e0b;
+  --warning-2: #fbbf24;
+  --success: #34d399;
+  --success-2: #10b981;
+  --info: #60a5fa;
+  /* lighter blue in dark */
+  --info-2: #3b82f6;
+}
+
+/* simple utility components that use the CSS vars for consistent light/dark */
+.app-root {
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-2) 100%);
+  color: var(--text);
+}
+
+.select-input {
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.heading {
+  color: var(--text);
+}
