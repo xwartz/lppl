@@ -23,6 +23,14 @@ interface LPPLResult {
   residual: number
   criticalDate: Date | null
   riskLevel: 'low' | 'medium' | 'high'
+  // diagnostics
+  sse?: number
+  rmse?: number
+  iterations?: number
+  converged?: boolean
+  runTimeMs?: number
+  // predicted price at critical time (price-space)
+  predictedPrice?: number
 }
 
 const BtcLPPLTracker: React.FC = () => {
@@ -64,72 +72,230 @@ const BtcLPPLTracker: React.FC = () => {
   }, [])
 
   const calculateLPPL = (data: KlineData[]) => {
-    if (data.length < 50) {
-      setError('数据点不足，需要至少50个数据点')
-      return
+    try {
+      if (data.length < 50) {
+        setError('数据点不足，需要至少50个数据点')
+        return
+      }
+
+      // 归一化时间和价格（times 单位：秒）
+      const times = data.map(d => d.time / 1000)
+      const prices = data.map(d => d.close)
+      const t0 = times[0]
+      const normalizedTimes = times.map(t => (t - t0) / 86400) // 转换为天数
+
+      // 初始参数估计（更稳健的初值并做范围保护）
+  const maxPrice = Math.max(...prices)
+      const lastPrice = prices[prices.length - 1]
+      const lastTime = normalizedTimes[normalizedTimes.length - 1]
+
+  // We'll fit LPPL to log-prices using a simple Nelder-Mead optimizer (gradient-free).
+      const logPrices = prices.map(p => Math.log(p))
+
+  // keep heuristic initial params - used to build initial guess
+  const initHeuristicA = Number.isFinite(maxPrice * 1.1) ? Math.log(maxPrice * 1.1) : Math.log(Math.max(1, lastPrice * 1.05))
+  const initHeuristicB = -0.01
+  const initHeuristicC = 0.005
+
+    const model = (theta: number[], t: number) => {
+        // theta: [A, B, C, tc, m, omega, phi]
+        const [A, B, C, tc, m, omega, phi] = theta
+        const dt = tc - t
+        if (!Number.isFinite(dt) || dt <= 0) return A
+        const dtSafe = Math.max(dt, 1e-8)
+        const pow = Math.pow(dtSafe, m)
+        const val = A + B * pow + C * pow * Math.cos(omega * Math.log(dtSafe) + phi)
+        return Number.isFinite(val) ? val : A
+      }
+
+      const sse = (theta: number[]) => {
+        // bounds/penalty: enforce reasonable ranges
+        const [A, B, C, tc, m, omega, phi] = theta
+        if (!Number.isFinite(A) || !Number.isFinite(B) || !Number.isFinite(C) || !Number.isFinite(tc) || !Number.isFinite(m) || !Number.isFinite(omega) || !Number.isFinite(phi)) return 1e30
+        if (m <= 0 || m >= 2) return 1e25
+        if (tc <= lastTime + 0.5) return 1e25
+        if (omega <= 0 || omega > 50) return 1e25
+
+        let sum = 0
+        for (let i = 0; i < normalizedTimes.length; i++) {
+          const t = normalizedTimes[i]
+          const y = logPrices[i]
+          if (!Number.isFinite(y)) continue
+          const yhat = model(theta, t)
+          if (!Number.isFinite(yhat)) return 1e26
+          const diff = y - yhat
+          sum += diff * diff
+        }
+        return sum
+      }
+
+  // Initial guess from heuristic (use log-space for A)
+  const initTc = lastTime + 30
+  const initM = 0.5
+  const initOmega = 6.0
+  const initPhi = 0.0
+
+  const x0 = [initHeuristicA, initHeuristicB, initHeuristicC, initTc, initM, initOmega, initPhi]
+
+      // Simple Nelder-Mead implementation
+      const nelderMead = (f: (x: number[]) => number, xStart: number[], opts?: { maxIter?: number, tol?: number }) => {
+        const n = xStart.length
+        const maxIter = opts?.maxIter ?? 300
+        const tol = opts?.tol ?? 1e-6
+        const alpha = 1
+        const gamma = 2
+        const rho = 0.5
+        const sigma = 0.5
+
+        // build initial simplex
+        const simplex: number[][] = [xStart.slice()]
+        for (let i = 0; i < n; i++) {
+          const xi = xStart.slice()
+          xi[i] = xi[i] !== 0 ? xi[i] * (1 + 0.05) : 0.00025
+          simplex.push(xi)
+        }
+
+        const values = simplex.map(p => f(p))
+
+  let iter = 0
+  let converged = false
+  for (; iter < maxIter; iter++) {
+          // sort simplex by f
+          const idx = values.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v).map(o => o.i)
+          const s = idx.map(i => simplex[i])
+          const fv = idx.map(i => values[i])
+
+          const best = s[0]
+          const worst = s[n]
+          const fBest = fv[0]
+          const fWorst = fv[n]
+
+          // centroid of all but worst
+          const centroid = new Array(n).fill(0)
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) centroid[j] += s[i][j]
+          }
+          for (let j = 0; j < n; j++) centroid[j] /= n
+
+          // reflection
+          const xr = centroid.map((c, j) => c + alpha * (c - worst[j]))
+          const fr = f(xr)
+
+          if (fr < fBest) {
+            // expansion
+            const xe = centroid.map((c, j) => c + gamma * (xr[j] - c))
+            const fe = f(xe)
+            if (fe < fr) {
+              s[n] = xe
+              fv[n] = fe
+            } else {
+              s[n] = xr
+              fv[n] = fr
+            }
+          } else if (fr < fv[n - 1]) {
+            s[n] = xr
+            fv[n] = fr
+          } else {
+            // contraction
+            const xc = centroid.map((c, j) => c + rho * (worst[j] - c))
+            const fc = f(xc)
+            if (fc < fWorst) {
+              s[n] = xc
+              fv[n] = fc
+            } else {
+              // reduction
+              for (let i = 1; i < s.length; i++) {
+                for (let j = 0; j < n; j++) {
+                  s[i][j] = best[j] + sigma * (s[i][j] - best[j])
+                }
+                fv[i] = f(s[i])
+              }
+            }
+          }
+
+          // rebuild simplex and values from s, fv
+          for (let k = 0; k < s.length; k++) {
+            simplex[k] = s[k]
+            values[k] = fv[k]
+          }
+
+          // check convergence (std dev of fv)
+          const mean = values.reduce((a, b) => a + b, 0) / values.length
+          const sd = Math.sqrt(values.reduce((a, b) => a + (b - mean) * (b - mean), 0) / values.length)
+          if (sd < tol) { converged = true; break }
+        }
+
+        // return best
+        let bestIndex = 0
+        let bestVal = values[0]
+        for (let i = 1; i < values.length; i++) {
+          if (values[i] < bestVal) {
+            bestVal = values[i]
+            bestIndex = i
+          }
+        }
+        return { solution: simplex[bestIndex], value: bestVal, iterations: iter + 1, converged }
+      }
+
+  // run optimizer and record diagnostics
+  const tStart = Date.now()
+  const result = nelderMead(sse, x0, { maxIter: 400, tol: 1e-8 })
+  const tEnd = Date.now()
+  const opt = result.solution
+  const iterations = result.iterations ?? 0
+  const converged = result.converged ?? false
+  const runTimeMs = tEnd - tStart
+
+      const optParams: LPPLParams = {
+        A: opt[0],
+        B: opt[1],
+        C: opt[2],
+        tc: opt[3],
+        m: opt[4],
+        omega: opt[5],
+        phi: opt[6]
+      }
+
+  // fitted values in log-space, convert to price-space for plotting
+  const fittedLog = normalizedTimes.map(t => model(opt, t))
+  const fitted = fittedLog.map(v => Number.isFinite(v) ? Math.exp(v) : NaN)
+
+  // compute residual on log-prices (use fittedLog)
+  const paired = logPrices.map((p, i) => ({ p, f: fittedLog[i] })).filter(x => Number.isFinite(x.p) && Number.isFinite(x.f))
+  const residuals = paired.map(pair => Math.pow(pair.p - pair.f, 2))
+  const sseVal = result.value ?? residuals.reduce((a, b) => a + b, 0)
+  const rmse = Math.sqrt(sseVal / Math.max(1, residuals.length))
+  const residual = rmse
+
+      const criticalTimestamp = (optParams.tc * 86400 + t0) * 1000
+      const criticalDate = new Date(Number.isFinite(criticalTimestamp) ? criticalTimestamp : Date.now())
+
+      // price acceleration use original prices
+      const lookback = Math.min(10, prices.length - 1)
+      const prevIndex = Math.max(0, prices.length - 1 - lookback)
+      const prevPrice = prices[prevIndex]
+      const denom = prevPrice && prevPrice > 0 ? prevPrice : null
+      const priceAcceleration = denom ? (lastPrice - prevPrice) / prevPrice : 0
+
+      const daysUntilCritical = Number.isFinite(criticalTimestamp) ? (criticalTimestamp - Date.now()) / (1000 * 86400) : Infinity
+
+      let riskLevel: 'low' | 'medium' | 'high' = 'low'
+      if (!Number.isFinite(residual) || residual > Math.max(1e-3, Math.abs(lastPrice) * 0.5)) {
+        setError('模型拟合不可靠（残差过大）')
+        riskLevel = 'low'
+      } else {
+        if (daysUntilCritical < 30 && priceAcceleration > 0.1) {
+          riskLevel = 'high'
+        } else if (daysUntilCritical < 60 || priceAcceleration > 0.05) {
+          riskLevel = 'medium'
+        }
+      }
+
+  const predictedPrice = Number.isFinite(optParams.A) ? Math.exp(optParams.A) : NaN
+  setLpplResult({ params: optParams, fitted, residual, criticalDate, riskLevel, sse: sseVal, rmse, iterations, converged, runTimeMs, predictedPrice })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '计算 LPPL 时发生错误')
     }
-
-    // 归一化时间和价格
-    const times = data.map(d => d.time / 1000)
-    const prices = data.map(d => d.close)
-    const t0 = times[0]
-    const normalizedTimes = times.map(t => (t - t0) / 86400) // 转换为天数
-
-    // 初始参数估计
-    const maxPrice = Math.max(...prices)
-    const minPrice = Math.min(...prices)
-    const lastTime = normalizedTimes[normalizedTimes.length - 1]
-
-    // 简化的 LPPL 拟合（使用最小二乘法的近似）
-    // 这里使用简化版本，实际应用中需要更复杂的非线性优化
-    const params: LPPLParams = {
-      A: maxPrice * 1.1,
-      B: -(maxPrice - minPrice) * 0.3,
-      C: (maxPrice - minPrice) * 0.1,
-      tc: lastTime + 30, // 预测未来30天
-      m: 0.5,
-      omega: 6.0,
-      phi: 0.5
-    }
-
-    // 计算拟合值
-    const fitted = normalizedTimes.map(t => {
-      const dt = params.tc - t
-      if (dt <= 0) return params.A
-
-      const powerLaw = params.A + params.B * Math.pow(dt, params.m)
-      const logPeriodic = params.C * Math.pow(dt, params.m) *
-                         Math.cos(params.omega * Math.log(dt) - params.phi)
-
-      return powerLaw + logPeriodic
-    })
-
-    // 计算残差
-    const residuals = prices.map((p, i) => Math.pow(p - fitted[i], 2))
-    const residual = Math.sqrt(residuals.reduce((a, b) => a + b, 0) / residuals.length)
-
-    // 计算临界日期
-    const criticalTimestamp = (params.tc * 86400 + t0) * 1000
-    const criticalDate = new Date(criticalTimestamp)
-
-    // 评估风险等级
-    const daysUntilCritical = (criticalTimestamp - Date.now()) / (1000 * 86400)
-    const priceAcceleration = (prices[prices.length - 1] - prices[prices.length - 10]) / prices[prices.length - 10]
-
-    let riskLevel: 'low' | 'medium' | 'high' = 'low'
-    if (daysUntilCritical < 30 && priceAcceleration > 0.1) {
-      riskLevel = 'high'
-    } else if (daysUntilCritical < 60 || priceAcceleration > 0.05) {
-      riskLevel = 'medium'
-    }
-
-    setLpplResult({
-      params,
-      fitted,
-      residual,
-      criticalDate,
-      riskLevel
-    })
   }
 
   useEffect(() => {
@@ -221,6 +387,7 @@ const BtcLPPLTracker: React.FC = () => {
                    lpplResult.riskLevel === 'medium' ? '中等风险' : '低风险'}
                 </p>
               </div>
+              {/* fitting diagnostics moved to bottom */}
 
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">预测临界点</h3>
@@ -230,6 +397,11 @@ const BtcLPPLTracker: React.FC = () => {
                 <p className="text-sm text-gray-600 mt-1">
                   {Math.round((lpplResult.criticalDate!.getTime() - Date.now()) / (1000 * 86400))} 天后
                 </p>
+                {lpplResult.predictedPrice && Number.isFinite(lpplResult.predictedPrice) && (
+                  <p className="text-sm text-gray-700 mt-3">
+                    预测临界价: <span className="text-blue-700 font-semibold">{priceFormatter(lpplResult.predictedPrice)}</span>
+                  </p>
+                )}
               </div>
 
               <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
@@ -296,6 +468,14 @@ const BtcLPPLTracker: React.FC = () => {
               <h2 className="text-2xl font-bold text-white mb-4">LPPL 模型参数</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
+                  <p className="text-gray-300 text-sm">基线 A (log)</p>
+                  <p className="text-white font-mono">{lpplResult.params.A.toFixed(3)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-300 text-sm">基线 A (price)</p>
+                  <p className="text-white font-mono">{priceFormatter(Math.exp(lpplResult.params.A))}</p>
+                </div>
+                <div>
                   <p className="text-gray-300 text-sm">临界时间 (tc)</p>
                   <p className="text-white font-mono">{lpplResult.params.tc.toFixed(2)}</p>
                 </div>
@@ -310,6 +490,39 @@ const BtcLPPLTracker: React.FC = () => {
                 <div>
                   <p className="text-gray-300 text-sm">相位 (φ)</p>
                   <p className="text-white font-mono">{lpplResult.params.phi.toFixed(3)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* bottom-area: fitting diagnostics (less prominent) */}
+          {lpplResult && (
+            <div className="mt-6 bg-white/4 rounded-lg p-3 text-sm text-gray-300 border border-white/8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex gap-4">
+                  <div>
+                    <p className="text-gray-300 text-xs">SSE (log-space)</p>
+                    <p className="text-white font-mono">{(lpplResult.sse ?? 0).toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-300 text-xs">RMSE (log-space)</p>
+                    <p className="text-white font-mono">{(lpplResult.rmse ?? 0).toFixed(6)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-300 text-xs">迭代次数</p>
+                    <p className="text-white font-mono">{lpplResult.iterations ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-300 text-xs">耗时</p>
+                    <p className="text-white font-mono">{(lpplResult.runTimeMs ?? 0)} ms</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-gray-300 text-xs">拟合状态</p>
+                  <p className={`font-mono ${lpplResult.converged ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {lpplResult.converged ? '已收敛' : '未收敛 / 达到最大迭代'}
+                  </p>
                 </div>
               </div>
             </div>
