@@ -1,73 +1,207 @@
-# React + TypeScript + Vite
+# LPPL 泡沫追踪器 ![LPPL Tracker](https://img.shields.io/badge/BTC-LPPL%20Tracker-orange?style=for-the-badge&logo=bitcoin)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**LPPL (Log-Periodic Power Law，对数周期幂律)** 是一个用于预测金融市场泡沫和崩盘的数学模型。该模型由物理学家 Didier Sornette 等人在 1990 年代开发，已成功应用于多次历史性市场事件的分析。
 
-Currently, two official plugins are available:
+### 核心思想
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+LPPL 模型基于以下观察：
+- 📈 **泡沫期间**：资产价格呈现加速上涨的特征
+- 🌊 **对数周期振荡**：价格增长伴随着特定频率的波动
+- ⚠️ **临界点**：这种模式通常指向一个"临界时间"（tc），可能发生市场转折
 
-## React Compiler
+### 数学公式
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+p(t) = A + B·(tc - t)^m + C·(tc - t)^m·cos[ω·ln(tc - t) - φ]
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**参数说明：**
+- `A`：预期的价格上限
+- `B`：幂律系数（通常为负值）
+- `C`：对数周期振荡的振幅
+- `tc`：临界时间（预测的转折点）
+- `m`：幂律指数（0 < m < 1）
+- `ω`：角频率（控制振荡频率）
+- `φ`：相位偏移
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 功能特性
+
+### 核心功能
+
+- **实时数据获取**：通过 Binance API 获取历史价格数据
+- **LPPL 模型拟合**：自动计算最佳拟合参数
+- **临界点预测**：预测可能的市场转折时间
+- **风险评估**：基于多维度指标的三级风险分类
+
+### 数据分析
+
+- **时间周期**：支持 90/180/365 天的历史数据分析
+- **误差评估**：RMSE（均方根误差）评估拟合质量
+- **多维风险**：综合临界点距离、价格加速度等指标
+
+
+## LPPL 模型原理
+
+### 1. 理论基础
+
+LPPL 模型源于：
+- **物理学中的临界现象理论**
+- **复杂系统的相变行为**
+- **市场参与者的群体行为**
+
+在金融泡沫中，市场参与者的正反馈行为（"羊群效应"）会导致价格加速上涨，形成自相似的分形结构。
+
+### 2. 模型组成部分
+
+#### 幂律成分：`A + B·(tc - t)^m`
+- 描述价格的主要趋势
+- `m` 通常在 0.1-0.9 之间
+- 负的 `B` 值表示价格向上限 `A` 收敛
+
+#### 对数周期成分：`C·(tc - t)^m·cos[ω·ln(tc - t) - φ]`
+- 捕捉价格的周期性振荡
+- 振荡频率随时间加快
+- 振幅随着接近 `tc` 而减小
+
+### 3. 临界时间 tc
+
+`tc` 是模型最重要的参数：
+- 表示系统达到"不稳定状态"的时间点
+- 不是精确的崩盘时间，而是高风险窗口
+- 实际转折可能在 `tc` 前后发生
+
+### 4. 历史应用案例
+
+LPPL 模型曾成功预测：
+
+| 事件             | 时间        | 结果               |
+| ---------------- | ----------- | ------------------ |
+| 🖥️ 互联网泡沫     | 2000年      | 成功预测崩盘窗口   |
+| 🏠 美国房地产泡沫 | 2007-2008年 | 提前数月预警       |
+| 📉 2015年中国股市 | 2015年      | 准确识别泡沫特征   |
+| ₿ 比特币 2017    | 2017年12月  | 预测 $20k 顶部     |
+| ₿ 比特币 2021    | 2021年4月   | 预测 $65k 附近风险 |
+
+
+## 快速开始
+
+# 1. 安装依赖
+pnpm install
+
+# 2. 启动开发服务器
+pnpm dev
+
+# 4. 构建生产版本
+pnpm build
 ```
+
+### 技术栈
+
+```json
+{
+  "前端框架": "React 18 + TypeScript",
+  "样式方案": "Tailwind CSS",
+  "图表库": "Recharts",
+  "图标库": "Lucide React",
+  "构建工具": "Vite",
+  "数据源": "Binance API"
+}
+```
+
+
+## 使用指南
+
+### 界面说明
+
+#### 1. 控制面板
+- **时间周期选择**：选择 90/180/365 天的历史数据
+- **刷新按钮**：重新获取数据并计算 LPPL 参数
+
+#### 2. 风险指标卡片
+
+##### 风险等级
+- **高风险**（红色）：临界点 < 30-60 天且价格加速上涨
+- **中等风险**（黄色）：临界点 < 90 天或价格温和上涨
+- **低风险**（绿色）：临界点较远且价格稳定
+
+##### 预测临界点
+显示模型计算的临界时间（tc）和距离当前的天数
+
+##### 模型拟合度
+RMSE 值越小，模型拟合越好
+
+#### 3. 价格图表
+- **橙色实线**：BTC 实际价格走势
+- **紫色虚线**：LPPL 模型拟合曲线
+- 两条曲线的吻合度反映模型质量
+
+#### 4. 模型参数
+显示完整的 LPPL 参数，供专业用户分析
+
+
+## 模型局限性
+
+### 技术局限
+
+1. **简化实现**
+   - 本项目使用简化的优化算法
+   - 生产环境需要更复杂的非线性优化（如 Levenberg-Marquardt）
+   - 需要多次拟合验证和参数约束
+
+2. **数据质量**
+   - 依赖 Binance 数据质量
+   - 受时间窗口选择影响较大
+   - 异常波动可能影响拟合结果
+
+3. **计算复杂度**
+   - 当前实现为教育演示版本
+   - 专业应用需要更严格的统计检验
+
+### 理论局限
+
+1. **不是水晶球**
+   - LPPL 只能识别泡沫特征，不能精确预测崩盘时间
+   - tc 是风险窗口，不是确定事件
+
+2. **市场复杂性**
+   - 加密货币市场受多种因素影响
+   - 外部事件（监管、新闻）可能突然改变趋势
+   - 模型基于历史模式，未来不一定重复
+
+3. **假阳性风险**
+   - 并非所有符合 LPPL 的上涨都会崩盘
+   - 某些情况下价格可能继续上涨
+
+
+### 扩展
+
+#### 算法改进
+- [ ] 实现 Levenberg-Marquardt 优化算法
+- [ ] 多次拟合取最优解
+
+#### 功能增强
+- [ ] 添加历史预测回测功能
+- [ ] 实现参数敏感性分析
+- [ ] 添加模型性能评分
+
+#### UI 优化
+- [ ] 实现参数手动调整功能
+- [ ] 添加导出报告功能
+- [ ] 支持多语言（英文、中文）
+
+
+## 免责声明
+
+### 重要提示
+
+**本工具仅供教育和研究目的使用。**
+
+- ❌ **不构成投资建议**：LPPL 模型的预测不应作为投资决策的唯一依据
+- ❌ **不保证准确性**：模型可能产生错误预测或假阳性
+- ❌ **风险自负**：加密货币投资风险极高，可能导致全部损失
+
+
+## 许可证
+
+MIT License
