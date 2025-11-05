@@ -105,13 +105,19 @@ const LPPLTracker: React.FC = () => {
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-white flex items-center gap-3 leading-tight">
                 <TrendingUp className="text-yellow-400" size={36} />
-                <span className="tracking-tight">{symbol.replace('USDT','')} LPPL 泡沫追踪器</span>
+                <span className="tracking-tight">
+                  {symbol.replace("USDT", "")} LPPL 泡沫追踪器
+                </span>
               </h1>
-              <p className="text-gray-300 mt-1 text-sm sm:text-base">对数周期幂律模型 · 市场临界点分析</p>
+              <p className="text-gray-300 mt-1 text-sm sm:text-base">
+                对数周期幂律模型 · 市场临界点分析
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <AssetSelector symbol={symbol} setSymbol={setSymbol} />
-              <label className="sr-only" htmlFor="range-select">选择区间</label>
+              <label className="sr-only" htmlFor="range-select">
+                选择区间
+              </label>
               <select
                 id="range-select"
                 value={days}
@@ -127,7 +133,10 @@ const LPPLTracker: React.FC = () => {
                 disabled={loading}
                 className="inline-flex items-center gap-2 bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white px-4 py-2 rounded-md shadow-sm transition disabled:opacity-50"
               >
-                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                <RefreshCw
+                  size={18}
+                  className={loading ? "animate-spin" : ""}
+                />
                 <span className="text-sm">刷新</span>
               </button>
             </div>
@@ -141,35 +150,71 @@ const LPPLTracker: React.FC = () => {
 
           {lpplResult && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className={`${getRiskBg(lpplResult.riskLevel)} rounded-xl p-6 border-2`}>
+              <div
+                className={`${getRiskBg(
+                  lpplResult.riskLevel
+                )} rounded-xl p-6 border-2`}
+              >
                 <div className="flex items-center gap-3 mb-2">
-                  <AlertTriangle className={getRiskColor(lpplResult.riskLevel)} size={24} />
-                  <h3 className="text-lg font-semibold text-gray-800">风险等级</h3>
+                  <AlertTriangle
+                    className={getRiskColor(lpplResult.riskLevel)}
+                    size={24}
+                  />
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    风险等级
+                  </h3>
                 </div>
-                <p className={`text-3xl font-bold ${getRiskColor(lpplResult.riskLevel)}`}>
-                  {lpplResult.riskLevel === 'high' ? '高风险' :
-                   lpplResult.riskLevel === 'medium' ? '中等风险' : '低风险'}
+                <p
+                  className={`text-3xl font-bold ${getRiskColor(
+                    lpplResult.riskLevel
+                  )}`}
+                >
+                  {lpplResult.riskLevel === "high"
+                    ? "高风险"
+                    : lpplResult.riskLevel === "medium"
+                    ? "中等风险"
+                    : "低风险"}
                 </p>
+                {lpplResult.riskReasons &&
+                  lpplResult.riskReasons.length > 0 && (
+                    <ul className="mt-3 text-sm text-gray-600 list-disc list-inside">
+                      {lpplResult.riskReasons.map((r, idx) => (
+                        <li key={idx}>{r}</li>
+                      ))}
+                    </ul>
+                  )}
               </div>
               {/* fitting diagnostics moved to bottom */}
 
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">预测临界点</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                  预测临界点
+                </h3>
                 <p className="text-2xl font-bold text-blue-600">
-                  {lpplResult.criticalDate?.toLocaleDateString('zh-CN')}
+                  {lpplResult.criticalDate?.toLocaleDateString("zh-CN")}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  {Math.round((lpplResult.criticalDate!.getTime() - Date.now()) / (1000 * 86400))} 天后
+                  {Math.round(
+                    (lpplResult.criticalDate!.getTime() - Date.now()) /
+                      (1000 * 86400)
+                  )}{" "}
+                  天后
                 </p>
-                {lpplResult.predictedPrice && Number.isFinite(lpplResult.predictedPrice) && (
-                  <p className="text-sm text-gray-700 mt-3">
-                    预测临界价: <span className="text-blue-700 font-semibold">{priceFormatter(lpplResult.predictedPrice)}</span>
-                  </p>
-                )}
+                {lpplResult.predictedPrice &&
+                  Number.isFinite(lpplResult.predictedPrice) && (
+                    <p className="text-sm text-gray-700 mt-3">
+                      预测临界价:{" "}
+                      <span className="text-blue-700 font-semibold">
+                        {priceFormatter(lpplResult.predictedPrice)}
+                      </span>
+                    </p>
+                  )}
               </div>
 
               <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">模型拟合度</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                  模型拟合度
+                </h3>
                 <p className="text-2xl font-bold text-purple-600">
                   {lpplResult.residual.toFixed(2)}
                 </p>
@@ -179,37 +224,53 @@ const LPPLTracker: React.FC = () => {
           )}
 
           <div className="bg-white rounded-xl p-6 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">价格与 LPPL 拟合曲线</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              价格与 LPPL 拟合曲线
+            </h2>
             <PriceChart data={chartData} priceFormatter={priceFormatter} />
           </div>
 
           {lpplResult?.params && (
             <div className="mt-8 bg-white/10 rounded-xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold text-white mb-4">LPPL 模型参数</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                LPPL 模型参数
+              </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-gray-300 text-sm">基线 A (log)</p>
-                  <p className="text-white font-mono">{lpplResult.params.A.toFixed(3)}</p>
+                  <p className="text-white font-mono">
+                    {lpplResult.params.A.toFixed(3)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-300 text-sm">基线 A (price)</p>
-                  <p className="text-white font-mono">{priceFormatter(Math.exp(lpplResult.params.A))}</p>
+                  <p className="text-white font-mono">
+                    {priceFormatter(Math.exp(lpplResult.params.A))}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-300 text-sm">临界时间 (tc)</p>
-                  <p className="text-white font-mono">{lpplResult.params.tc.toFixed(2)}</p>
+                  <p className="text-white font-mono">
+                    {lpplResult.params.tc.toFixed(2)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-300 text-sm">幂律指数 (m)</p>
-                  <p className="text-white font-mono">{lpplResult.params.m.toFixed(3)}</p>
+                  <p className="text-white font-mono">
+                    {lpplResult.params.m.toFixed(3)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-300 text-sm">角频率 (ω)</p>
-                  <p className="text-white font-mono">{lpplResult.params.omega.toFixed(3)}</p>
+                  <p className="text-white font-mono">
+                    {lpplResult.params.omega.toFixed(3)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-300 text-sm">相位 (φ)</p>
-                  <p className="text-white font-mono">{lpplResult.params.phi.toFixed(3)}</p>
+                  <p className="text-white font-mono">
+                    {lpplResult.params.phi.toFixed(3)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -222,26 +283,40 @@ const LPPLTracker: React.FC = () => {
                 <div className="flex gap-4">
                   <div>
                     <p className="text-gray-300 text-xs">SSE (log-space)</p>
-                    <p className="text-white font-mono">{(lpplResult.sse ?? 0).toFixed(4)}</p>
+                    <p className="text-white font-mono">
+                      {(lpplResult.sse ?? 0).toFixed(4)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-300 text-xs">RMSE (log-space)</p>
-                    <p className="text-white font-mono">{(lpplResult.rmse ?? 0).toFixed(6)}</p>
+                    <p className="text-white font-mono">
+                      {(lpplResult.rmse ?? 0).toFixed(6)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-300 text-xs">迭代次数</p>
-                    <p className="text-white font-mono">{lpplResult.iterations ?? '-'}</p>
+                    <p className="text-white font-mono">
+                      {lpplResult.iterations ?? "-"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-300 text-xs">耗时</p>
-                    <p className="text-white font-mono">{(lpplResult.runTimeMs ?? 0)} ms</p>
+                    <p className="text-white font-mono">
+                      {lpplResult.runTimeMs ?? 0} ms
+                    </p>
                   </div>
                 </div>
 
                 <div>
                   <p className="text-gray-300 text-xs">拟合状态</p>
-                  <p className={`font-mono ${lpplResult.converged ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {lpplResult.converged ? '已收敛' : '未收敛 / 达到最大迭代'}
+                  <p
+                    className={`font-mono ${
+                      lpplResult.converged
+                        ? "text-emerald-400"
+                        : "text-amber-400"
+                    }`}
+                  >
+                    {lpplResult.converged ? "已收敛" : "未收敛 / 达到最大迭代"}
                   </p>
                 </div>
               </div>
@@ -249,7 +324,10 @@ const LPPLTracker: React.FC = () => {
           )}
 
           <div className="mt-6 text-gray-300 text-sm">
-            <p>⚠️ 免责声明：LPPL 模型仅供参考，不构成投资建议。市场预测具有不确定性，请谨慎决策。</p>
+            <p>
+              ⚠️ 免责声明：LPPL
+              模型仅供参考，不构成投资建议。市场预测具有不确定性，请谨慎决策。
+            </p>
           </div>
 
           {/* Loading overlay */}

@@ -22,7 +22,8 @@ export interface LPPLResult {
   fitted: number[]
   residual: number
   criticalDate: Date | null
-  riskLevel: 'low' | 'medium' | 'high'
+  riskLevel: "low" | "medium" | "high"
+  riskReasons?: string[]
   sse?: number
   rmse?: number
   iterations?: number
@@ -232,11 +233,27 @@ export const fitLppl = (data: KlineData[]) : LPPLResult => {
   const priceAcceleration = denom ? (lastPrice - prevPrice) / prevPrice : 0
   const daysUntilCritical = Number.isFinite(criticalTimestamp) ? (criticalTimestamp - Date.now()) / (1000 * 86400) : Infinity
   let riskLevel: 'low' | 'medium' | 'high' = 'low'
+  const riskReasons: string[] = []
   if (!Number.isFinite(residual) || residual > Math.max(1e-3, Math.abs(lastPrice) * 0.5)) {
     riskLevel = 'low'
+    riskReasons.push("拟合不可靠（残差过大或数值异常）")
   } else {
-    if (daysUntilCritical < 30 && priceAcceleration > 0.1) riskLevel = 'high'
-    else if (daysUntilCritical < 60 || priceAcceleration > 0.05) riskLevel = 'medium'
+    // note reasons for UI transparency
+    if (daysUntilCritical < 30) {
+      riskReasons.push("预测临界日临近 (<30 天)")
+    } else if (daysUntilCritical < 60) {
+      riskReasons.push("预测临界日在 30–60 天内")
+    }
+    if (priceAcceleration > 0.1) {
+      riskReasons.push("近期价格快速上涨 (>10%)")
+    } else if (priceAcceleration > 0.05) {
+      riskReasons.push("近期价格上涨 (>5%)")
+    }
+
+    if (daysUntilCritical < 30 && priceAcceleration > 0.1) riskLevel = "high"
+    else if (daysUntilCritical < 60 || priceAcceleration > 0.05)
+      riskLevel = "medium"
+    else riskLevel = "low"
   }
   const predictedPrice = Number.isFinite(optParams.A) ? Math.exp(optParams.A) : NaN
   const ci = computePredictedPriceCI(opt, normalizedTimes, logPrices, fittedLog, sseVal, optParams)
@@ -246,6 +263,7 @@ export const fitLppl = (data: KlineData[]) : LPPLResult => {
     residual,
     criticalDate,
     riskLevel,
+    riskReasons,
     sse: sseVal,
     rmse,
     iterations: result.iterations,
@@ -253,6 +271,6 @@ export const fitLppl = (data: KlineData[]) : LPPLResult => {
     runTimeMs: tEnd - tStart,
     predictedPrice,
     predictedPriceLower: ci.lower,
-    predictedPriceUpper: ci.upper
+    predictedPriceUpper: ci.upper,
   }
 }
