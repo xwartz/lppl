@@ -1,8 +1,7 @@
-import React from 'react'
-import BtcLpplTracker from './components/BtcLpplTracker'
+import LPPLTracker from "./components/LPPLTracker"
 
 function App() {
-  return <BtcLpplTracker />
+  return <LPPLTracker />
 }
 
 export default App
