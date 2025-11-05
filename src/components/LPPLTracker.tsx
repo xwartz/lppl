@@ -20,22 +20,40 @@ const LPPLTracker: React.FC = () => {
     try {
       const endTime = Date.now()
       const startTime = endTime - days * 24 * 60 * 60 * 1000
-      const interval = days > 90 ? '1d' : '4h'
-      const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=1000`)
+      const interval = days > 90 ? "1d" : "4h"
+      const response = await fetch(
+        `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=1000`
+      )
 
-      if (!response.ok) throw new Error('获取数据失败')
+      if (!response.ok) throw new Error("获取数据失败")
 
       const data = await response.json()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const klines: KlineData[] = data.map((k: any) => ({
+      // Binance returns an array of kline arrays. Define the tuple shape to avoid `any`.
+      type BinanceKline = [
+        number, // openTime
+        string, // open
+        string, // high
+        string, // low
+        string, // close
+        string, // volume
+        number, // closeTime
+        string, // quoteAssetVolume
+        number, // numberOfTrades
+        string, // takerBaseAssetVolume
+        string, // takerQuoteAssetVolume
+        string // ignore
+      ]
+
+      if (!Array.isArray(data)) throw new Error("Unexpected kline response")
+      const klines: KlineData[] = (data as BinanceKline[]).map((k) => ({
         time: k[0],
-        close: parseFloat(k[4])
+        close: parseFloat(k[4]),
       }))
 
-  setPriceData(klines)
-  // delegate heavy lifting to shared lib (keeps UI file small)
-  const res = fitLppl(klines)
-  setLpplResult(res)
+      setPriceData(klines)
+      // delegate heavy lifting to shared lib (keeps UI file small)
+      const res = fitLppl(klines)
+      setLpplResult(res)
     } catch (err) {
       setError(err instanceof Error ? err.message : '未知错误')
     } finally {
