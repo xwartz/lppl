@@ -5,7 +5,7 @@ interface Props {
   setSymbol: (s: string) => void
 }
 
-const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT']
+const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "ZECUSDT"]
 
 const AssetSelector: React.FC<Props> = ({ symbol, setSymbol }) => {
   return (

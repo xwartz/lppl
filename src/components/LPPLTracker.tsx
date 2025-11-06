@@ -1,8 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { useTheme } from "../lib/theme"
-import type { ThemePref } from "../lib/theme"
+import React, { useState, useEffect, useCallback } from "react"
 import { TrendingUp, AlertTriangle, RefreshCw } from "lucide-react"
-import AssetSelector from "./AssetSelector"
 import PriceChart from "./PriceChart"
 import { fitLppl } from "../lib/lppl"
 import type { KlineData, LPPLResult } from "../lib/lppl"
@@ -13,19 +10,48 @@ const LPPLTracker: React.FC = () => {
   const [lpplResult, setLpplResult] = useState<LPPLResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>("")
-  const [days, setDays] = useState(180)
-  // use global theme hook
-  const { theme, setTheme } = useTheme()
+  const [days, setDays] = useState(20)
+  const [useCustomRange, setUseCustomRange] = useState(false)
+  // date input values in YYYY-MM-DD format
+  const msPerDay = 24 * 60 * 60 * 1000
+  const defaultEndDate = new Date()
+  const defaultStartDate = new Date(Date.now() - days * msPerDay)
+  const [customStart, setCustomStart] = useState(
+    defaultStartDate.toISOString().slice(0, 10)
+  )
+  const [customEnd, setCustomEnd] = useState(
+    defaultEndDate.toISOString().slice(0, 10)
+  )
+  const [customSymbolInput, setCustomSymbolInput] = useState(symbol)
+  // theme handled elsewhere; no local usage here
 
   const fetchBinanceData = useCallback(
-    async (days: number) => {
+    async (daysArg?: number, startTimeArg?: number, endTimeArg?: number) => {
       setLoading(true)
       setError("")
 
       try {
-        const endTime = Date.now()
-        const startTime = endTime - days * 24 * 60 * 60 * 1000
-        const interval = days > 90 ? "1d" : "4h"
+        let endTime: number
+        let startTime: number
+        let interval: string
+
+        if (
+          typeof startTimeArg === "number" &&
+          typeof endTimeArg === "number"
+        ) {
+          startTime = startTimeArg
+          endTime = endTimeArg
+          const rangeDays = Math.max(
+            1,
+            Math.round((endTime - startTime) / msPerDay)
+          )
+          interval = rangeDays > 90 ? "1d" : "4h"
+        } else {
+          endTime = Date.now()
+          const useDays = typeof daysArg === "number" ? daysArg : days
+          startTime = endTime - useDays * msPerDay
+          interval = useDays > 90 ? "1d" : "4h"
+        }
         const response = await fetch(
           `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=1000`
         )
@@ -65,14 +91,45 @@ const LPPLTracker: React.FC = () => {
         setLoading(false)
       }
     },
-    [symbol]
+    [symbol, days, msPerDay]
   )
 
   // Theme is handled globally by ThemeProvider (useTheme)
 
   useEffect(() => {
-    fetchBinanceData(days)
-  }, [days, symbol, fetchBinanceData])
+    // keep manual symbol input in sync when symbol changes externally
+    setCustomSymbolInput(symbol)
+  }, [symbol])
+
+  const applyCustomSymbol = () => {
+    const s = customSymbolInput.trim().toUpperCase()
+    if (!s) {
+      setError("交易对不能为空")
+      return
+    }
+    setError("")
+    setSymbol(s)
+  }
+  useEffect(() => {
+    if (useCustomRange) {
+      // parse custom dates and fetch range
+      const s = new Date(customStart)
+      s.setHours(0, 0, 0, 0)
+      const e = new Date(customEnd)
+      e.setHours(23, 59, 59, 999)
+      if (
+        Number.isNaN(s.getTime()) ||
+        Number.isNaN(e.getTime()) ||
+        e.getTime() < s.getTime()
+      ) {
+        setError("自定义日期无效：结束时间必须晚于或等于起始时间")
+        return
+      }
+      fetchBinanceData(undefined, s.getTime(), e.getTime())
+    } else {
+      fetchBinanceData(days)
+    }
+  }, [days, symbol, fetchBinanceData, useCustomRange, customStart, customEnd])
 
   const chartData = priceData.map((d, i) => ({
     date: new Date(d.time).toLocaleDateString(),
@@ -125,60 +182,132 @@ const LPPLTracker: React.FC = () => {
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold heading flex items-center gap-3 leading-tight">
                 <TrendingUp className="text-warning" size={36} />
-                <span className="tracking-tight">
-                  {symbol.replace("USDT", "")} LPPL 泡沫追踪器
-                </span>
+                <span className="tracking-tight">LPPL 泡沫追踪器</span>
               </h1>
               <p className="text-muted mt-1 text-sm sm:text-base">
                 对数周期幂律模型 · 市场临界点分析
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Theme selector: Light / Dark / System */}
-              <label className="sr-only" htmlFor="theme-select">
-                切换主题
-              </label>
-              <select
-                id="theme-select"
-                value={theme}
-                onChange={(e) => {
-                  const v = e.target.value as ThemePref
-                  setTheme(v)
-                }}
-                className="bg-card text-text border border-border-var px-2 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm w-full sm:w-auto"
-              >
-                <option value="system">系统 (System)</option>
-                <option value="light">浅色 (Light)</option>
-                <option value="dark">深色 (Dark)</option>
-              </select>
+          </div>
 
-              <div className="w-full sm:w-auto">
-                <AssetSelector symbol={symbol} setSymbol={setSymbol} />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full items-center">
+              {/* Left: asset selector + manual input */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* <div className="w-full sm:w-auto">
+                  <AssetSelector symbol={symbol} setSymbol={setSymbol} />
+                </div> */}
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <input
+                    aria-label="手动输入交易对"
+                    placeholder="例如 BTCUSDT"
+                    value={customSymbolInput}
+                    onChange={(e) => setCustomSymbolInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") applyCustomSymbol()
+                    }}
+                    className="bg-card text-text border border-border-var px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                  />
+                  <button
+                    onClick={applyCustomSymbol}
+                    className="px-3 py-2 bg-panel border border-border-var rounded-md text-sm hover:bg-gray-100"
+                    type="button"
+                  >
+                    应用
+                  </button>
+                </div>
               </div>
-              <label className="sr-only" htmlFor="range-select">
-                选择区间
-              </label>
-              <select
-                id="range-select"
-                value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
-                className="bg-card text-text border border-border-var px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm w-full sm:w-auto"
-              >
-                <option value={90}>90 天</option>
-                <option value={180}>180 天</option>
-                <option value={365}>365 天</option>
-              </select>
-              <button
-                onClick={() => fetchBinanceData(days)}
-                disabled={loading}
-                className="inline-flex items-center gap-2 bg-gradient-to-br from-accent to-accent-2 hover:from-accent-2 hover:to-accent text-white px-4 py-2 rounded-md shadow-sm transition disabled:opacity-50 w-full sm:w-auto justify-center"
-              >
-                <RefreshCw
-                  size={18}
-                  className={loading ? "animate-spin" : ""}
-                />
-                <span className="text-sm">刷新</span>
-              </button>
+
+              {/* Right: range controls + refresh */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={useCustomRange}
+                        onChange={(e) => setUseCustomRange(e.target.checked)}
+                        className="form-checkbox"
+                      />
+                      <span className="text-sm">自定义时间</span>
+                    </label>
+                    {useCustomRange && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="custom-start"
+                          type="date"
+                          value={customStart}
+                          onChange={(e) => setCustomStart(e.target.value)}
+                          className="bg-card text-text border border-border-var px-2 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                        />
+                        <span className="text-sm">—</span>
+                        <input
+                          id="custom-end"
+                          type="date"
+                          value={customEnd}
+                          onChange={(e) => setCustomEnd(e.target.value)}
+                          className="bg-card text-text border border-border-var px-2 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center">
+                  <label className="sr-only" htmlFor="range-select">
+                    选择区间
+                  </label>
+                  <select
+                    id="range-select"
+                    value={days}
+                    onChange={(e) => setDays(Number(e.target.value))}
+                    disabled={useCustomRange}
+                    className="bg-card text-text border border-border-var px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm disabled:opacity-50"
+                  >
+                    <option value={20}>20 天</option>
+                    <option value={50}>50 天</option>
+                    <option value={100}>100 天</option>
+                    <option value={200}>200 天</option>
+                    <option value={365}>365 天</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      // refresh using the active mode
+                      if (useCustomRange) {
+                        const s = new Date(customStart)
+                        s.setHours(0, 0, 0, 0)
+                        const e = new Date(customEnd)
+                        e.setHours(23, 59, 59, 999)
+                        if (
+                          Number.isNaN(s.getTime()) ||
+                          Number.isNaN(e.getTime()) ||
+                          e.getTime() < s.getTime()
+                        ) {
+                          setError(
+                            "自定义日期无效：结束时间必须晚于或等于起始时间"
+                          )
+                          return
+                        }
+                        fetchBinanceData(undefined, s.getTime(), e.getTime())
+                      } else {
+                        fetchBinanceData(days)
+                      }
+                    }}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 bg-gradient-to-br from-accent to-accent-2 hover:from-accent-2 hover:to-accent text-white px-4 py-2 rounded-md shadow-sm transition disabled:opacity-50 justify-center"
+                  >
+                    <RefreshCw
+                      size={18}
+                      className={loading ? "animate-spin" : ""}
+                    />
+                    <span className="text-sm">刷新</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -231,7 +360,8 @@ const LPPLTracker: React.FC = () => {
                 </p>
                 <p className="text-sm text-muted mt-1">
                   {Math.round(
-                    (lpplResult.criticalDate!.getTime() - Date.now()) /
+                    (lpplResult.criticalDate!.getTime() -
+                      new Date(customEnd).getTime()) /
                       (1000 * 86400)
                   )}{" "}
                   天后
