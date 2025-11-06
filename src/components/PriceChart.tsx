@@ -1,5 +1,14 @@
-import React from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import React, { useEffect, useState } from "react"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
 import { useTheme } from "../lib/theme"
 import type { ThemePref } from "../lib/theme"
 
@@ -15,8 +24,21 @@ interface Props {
 }
 
 const PriceChart: React.FC<Props> = ({ data, priceFormatter }) => {
-  const xInterval = data.length > 10 ? Math.floor(data.length / 10) : 0
   const { theme } = useTheme()
+  const [chartHeight, setChartHeight] = useState<number>(400)
+
+  // set responsive chart height based on viewport width
+  useEffect(() => {
+    const calc = () => {
+      if (typeof window === "undefined") return
+      const w = window.innerWidth
+      // Tailwind 'sm' breakpoint is 640px; choose a compact height for small screens
+      setChartHeight(w < 640 ? 260 : 400)
+    }
+    calc()
+    window.addEventListener("resize", calc)
+    return () => window.removeEventListener("resize", calc)
+  }, [])
   // detect system dark when pref === 'system'
   const systemDark =
     typeof window !== "undefined" &&
@@ -42,15 +64,10 @@ const PriceChart: React.FC<Props> = ({ data, priceFormatter }) => {
       }
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
+    <ResponsiveContainer width="100%" height={chartHeight}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-        <XAxis
-          dataKey="date"
-          stroke={axisStroke}
-          tick={{ fontSize: 12 }}
-          interval={xInterval}
-        />
+        <XAxis dataKey="date" stroke={axisStroke} tick={{ fontSize: 12 }} />
         <YAxis
           stroke={axisStroke}
           tick={{ fontSize: 12 }}

@@ -133,7 +133,7 @@ const LPPLTracker: React.FC = () => {
                 对数周期幂律模型 · 市场临界点分析
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Theme selector: Light / Dark / System */}
               <label className="sr-only" htmlFor="theme-select">
                 切换主题
@@ -145,14 +145,16 @@ const LPPLTracker: React.FC = () => {
                   const v = e.target.value as ThemePref
                   setTheme(v)
                 }}
-                className="bg-card text-text border border-border-var px-2 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                className="bg-card text-text border border-border-var px-2 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm w-full sm:w-auto"
               >
                 <option value="system">系统 (System)</option>
                 <option value="light">浅色 (Light)</option>
                 <option value="dark">深色 (Dark)</option>
               </select>
 
-              <AssetSelector symbol={symbol} setSymbol={setSymbol} />
+              <div className="w-full sm:w-auto">
+                <AssetSelector symbol={symbol} setSymbol={setSymbol} />
+              </div>
               <label className="sr-only" htmlFor="range-select">
                 选择区间
               </label>
@@ -160,7 +162,7 @@ const LPPLTracker: React.FC = () => {
                 id="range-select"
                 value={days}
                 onChange={(e) => setDays(Number(e.target.value))}
-                className="bg-card text-text border border-border-var px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                className="bg-card text-text border border-border-var px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm w-full sm:w-auto"
               >
                 <option value={90}>90 天</option>
                 <option value={180}>180 天</option>
@@ -169,7 +171,7 @@ const LPPLTracker: React.FC = () => {
               <button
                 onClick={() => fetchBinanceData(days)}
                 disabled={loading}
-                className="inline-flex items-center gap-2 bg-gradient-to-br from-accent to-accent-2 hover:from-accent-2 hover:to-accent text-white px-4 py-2 rounded-md shadow-sm transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 bg-gradient-to-br from-accent to-accent-2 hover:from-accent-2 hover:to-accent text-white px-4 py-2 rounded-md shadow-sm transition disabled:opacity-50 w-full sm:w-auto justify-center"
               >
                 <RefreshCw
                   size={18}
