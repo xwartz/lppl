@@ -4,20 +4,19 @@ import PriceChart from "./PriceChart"
 import { fitLppl } from "../lib/lppl"
 import type { KlineData, LPPLResult } from "../lib/lppl"
 
-const LPPLTracker: React.FC = () => {
-  const [symbol, setSymbol] = useState("BTCUSDT")
+const StockLPPLTracker: React.FC = () => {
+  const [symbol, setSymbol] = useState("AAPL")
   const [priceData, setPriceData] = useState<KlineData[]>([])
   const [lpplResult, setLpplResult] = useState<LPPLResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>("")
-  const [days, setDays] = useState(20)
+  const [days, setDays] = useState(200)
   const [useCustomRange, setUseCustomRange] = useState(false)
-  // advanced solver settings for LPPL fitting
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [maxIterSetting, setMaxIterSetting] = useState(1000)
   const [restartsSetting, setRestartsSetting] = useState(6)
   const [tolSetting, setTolSetting] = useState(1e-9)
-  // date input values in YYYY-MM-DD format
+
   const msPerDay = 24 * 60 * 60 * 1000
   const defaultEndDate = new Date()
   const defaultStartDate = new Date(Date.now() - days * msPerDay)
@@ -28,66 +27,42 @@ const LPPLTracker: React.FC = () => {
     defaultEndDate.toISOString().slice(0, 10)
   )
   const [customSymbolInput, setCustomSymbolInput] = useState(symbol)
-  // theme handled elsewhere; no local usage here
 
-  const fetchBinanceData = useCallback(
+  const fetchStockData = useCallback(
     async (daysArg?: number, startTimeArg?: number, endTimeArg?: number) => {
       setLoading(true)
       setError("")
-
       try {
-        let endTime: number
-        let startTime: number
-        let interval: string
+        const query = new URLSearchParams()
+        query.set("symbol", symbol)
+        query.set("interval", "1d")
 
         if (
           typeof startTimeArg === "number" &&
           typeof endTimeArg === "number"
         ) {
-          startTime = startTimeArg
-          endTime = endTimeArg
-          const rangeDays = Math.max(
-            1,
-            Math.round((endTime - startTime) / msPerDay)
-          )
-          interval = rangeDays > 90 ? "1d" : "4h"
+          query.set("start", String(startTimeArg))
+          query.set("end", String(endTimeArg))
         } else {
-          endTime = Date.now()
           const useDays = typeof daysArg === "number" ? daysArg : days
-          startTime = endTime - useDays * msPerDay
-          interval = useDays > 90 ? "1d" : "4h"
+          query.set("rangeDays", String(useDays))
         }
+
         const response = await fetch(
-          `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=1000`
+          `/api/stock/historical?${query.toString()}`
         )
-
-        if (!response.ok) throw new Error("获取数据失败")
-
-        const data = await response.json()
-        // Binance returns an array of kline arrays. Define the tuple shape to avoid `any`.
-        type BinanceKline = [
-          number, // openTime
-          string, // open
-          string, // high
-          string, // low
-          string, // close
-          string, // volume
-          number, // closeTime
-          string, // quoteAssetVolume
-          number, // numberOfTrades
-          string, // takerBaseAssetVolume
-          string, // takerQuoteAssetVolume
-          string // ignore
-        ]
-
-        if (!Array.isArray(data)) throw new Error("Unexpected kline response")
-        const klines: KlineData[] = (data as BinanceKline[]).map((k) => ({
-          time: k[0],
-          close: parseFloat(k[4]),
-        }))
-
+        if (!response.ok) throw new Error("获取股票数据失败")
+        const payload = await response.json()
+        if (!payload || !Array.isArray(payload.points)) {
+          throw new Error("股票历史数据格式异常")
+        }
+        const klines: KlineData[] = payload.points.map(
+          (p: { time: number; close: number }) => ({
+            time: p.time,
+            close: p.close,
+          })
+        )
         setPriceData(klines)
-        // delegate heavy lifting to shared lib (keeps UI file small)
         const res = fitLppl(klines, {
           maxIter: maxIterSetting,
           restarts: restartsSetting,
@@ -100,28 +75,25 @@ const LPPLTracker: React.FC = () => {
         setLoading(false)
       }
     },
-    [symbol, days, msPerDay, maxIterSetting, restartsSetting, tolSetting]
+    [symbol, days, maxIterSetting, restartsSetting, tolSetting]
   )
 
-  // Theme is handled globally by ThemeProvider (useTheme)
-
   useEffect(() => {
-    // keep manual symbol input in sync when symbol changes externally
     setCustomSymbolInput(symbol)
   }, [symbol])
 
   const applyCustomSymbol = () => {
     const s = customSymbolInput.trim().toUpperCase()
-    if (!s) {
-      setError("交易对不能为空")
+    if (!/^[A-Z.-]{1,10}$/.test(s)) {
+      setError("请输入有效股票代码，例如 AAPL、MSFT、NVDA")
       return
     }
     setError("")
     setSymbol(s)
   }
+
   useEffect(() => {
     if (useCustomRange) {
-      // parse custom dates and fetch range
       const s = new Date(customStart)
       s.setHours(0, 0, 0, 0)
       const e = new Date(customEnd)
@@ -134,11 +106,11 @@ const LPPLTracker: React.FC = () => {
         setError("自定义日期无效：结束时间必须晚于或等于起始时间")
         return
       }
-      fetchBinanceData(undefined, s.getTime(), e.getTime())
+      fetchStockData(undefined, s.getTime(), e.getTime())
     } else {
-      fetchBinanceData(days)
+      fetchStockData(days)
     }
-  }, [days, symbol, fetchBinanceData, useCustomRange, customStart, customEnd])
+  }, [days, symbol, fetchStockData, useCustomRange, customStart, customEnd])
 
   const chartData = priceData.map((d, i) => ({
     date: new Date(d.time).toLocaleDateString(),
@@ -152,14 +124,13 @@ const LPPLTracker: React.FC = () => {
       return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 2,
       }).format(value)
     } catch {
-      return `$${Math.round(value)}`
+      return `$${value.toFixed(2)}`
     }
   }
 
-  // Return color classes that work for both light and dark modes (dark follows system)
   const getRiskColor = (level: string) => {
     switch (level) {
       case "high":
@@ -172,7 +143,6 @@ const LPPLTracker: React.FC = () => {
   }
 
   const getRiskBg = (level: string) => {
-    // Use panel background and add a colored left accent border that looks good in dark mode
     switch (level) {
       case "high":
         return "bg-panel border border-border-var border-l-4 border-l-danger"
@@ -189,16 +159,11 @@ const LPPLTracker: React.FC = () => {
         <div className="bg-card text-text border border-border-var rounded-2xl p-6 sm:p-8 shadow-2xl">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full items-center">
-              {/* Left: asset selector + manual input */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* <div className="w-full sm:w-auto">
-                  <AssetSelector symbol={symbol} setSymbol={setSymbol} />
-                </div> */}
-
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <input
-                    aria-label="手动输入交易对"
-                    placeholder="例如 BTCUSDT"
+                    aria-label="手动输入股票代码"
+                    placeholder="例如 AAPL / MSFT / NVDA"
                     value={customSymbolInput}
                     onChange={(e) => setCustomSymbolInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -216,7 +181,6 @@ const LPPLTracker: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right: range controls + refresh */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
                 <div className="flex items-center gap-3">
                   <div>
@@ -262,18 +226,17 @@ const LPPLTracker: React.FC = () => {
                     disabled={useCustomRange}
                     className="bg-card text-text border border-border-var px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent text-sm disabled:opacity-50"
                   >
-                    <option value={20}>20 天</option>
                     <option value={50}>50 天</option>
                     <option value={100}>100 天</option>
                     <option value={200}>200 天</option>
                     <option value={365}>365 天</option>
+                    <option value={730}>2 年</option>
                   </select>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      // refresh using the active mode
                       if (useCustomRange) {
                         const s = new Date(customStart)
                         s.setHours(0, 0, 0, 0)
@@ -289,9 +252,9 @@ const LPPLTracker: React.FC = () => {
                           )
                           return
                         }
-                        fetchBinanceData(undefined, s.getTime(), e.getTime())
+                        fetchStockData(undefined, s.getTime(), e.getTime())
                       } else {
-                        fetchBinanceData(days)
+                        fetchStockData(days)
                       }
                     }}
                     disabled={loading}
@@ -396,7 +359,6 @@ const LPPLTracker: React.FC = () => {
                     </ul>
                   )}
               </div>
-              {/* fitting diagnostics moved to bottom */}
 
               <div className="bg-panel border border-border-var rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-text mb-2">
@@ -489,7 +451,6 @@ const LPPLTracker: React.FC = () => {
             </div>
           )}
 
-          {/* bottom-area: fitting diagnostics (less prominent) */}
           {lpplResult && (
             <div className="mt-6 bg-panel p-3 rounded-lg text-sm">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -535,13 +496,9 @@ const LPPLTracker: React.FC = () => {
           )}
 
           <div className="mt-6 text-sm text-muted">
-            <p>
-              ⚠️ 免责声明：LPPL
-              模型仅供参考，不构成投资建议。市场预测具有不确定性，请谨慎决策。
-            </p>
+            <p>⚠️ 免责声明：LPPL 模型仅供参考，不构成投资建议。</p>
           </div>
 
-          {/* Loading overlay */}
           {loading && (
             <div className="fixed inset-0 flex items-center justify-center bg-black/40">
               <div className="bg-card text-text backdrop-blur-md rounded-lg p-4 flex items-center gap-3 border border-border-var">
@@ -556,4 +513,6 @@ const LPPLTracker: React.FC = () => {
   )
 }
 
-export default LPPLTracker
+export default StockLPPLTracker
+
+
