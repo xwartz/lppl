@@ -7,7 +7,9 @@
     "dev": "vite",
     "server": "pnpm dlx vercel@latest dev",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false --noEmit",
     "lint": "eslint .",
+    "check": "pnpm lint && pnpm typecheck && pnpm build",
     "preview": "vite preview"
   },
   "dependencies": {

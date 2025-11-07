@@ -9,8 +9,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
-import { useTheme } from "../lib/theme"
-import type { ThemePref } from "../lib/theme"
+import { useTheme } from "../lib/theme-context"
+import type { ThemePref } from "../lib/theme-context"
 
 interface Point {
   date: string
