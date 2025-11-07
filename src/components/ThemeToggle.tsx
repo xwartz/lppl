@@ -4,8 +4,12 @@ import { useTheme } from "../lib/theme-context"
 
 const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme()
+  const [isAnimating, setIsAnimating] = React.useState(false)
 
   const toggleTheme = () => {
+    setIsAnimating(true)
+    setTimeout(() => setIsAnimating(false), 500)
+
     if (theme === "light") {
       setTheme("dark")
     } else {
@@ -18,11 +22,17 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="btn-secondary h-10 w-10 flex items-center justify-center rounded-lg transition-all"
+      className="btn-secondary h-10 w-10 flex items-center justify-center rounded-lg transition-all hover:scale-110"
       aria-label="切换主题"
       type="button"
     >
-      {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      <span
+        className={`inline-flex transition-all duration-300 ${
+          isAnimating ? "rotate-180 scale-90" : "rotate-0 scale-100"
+        }`}
+      >
+        {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      </span>
     </button>
   )
 }

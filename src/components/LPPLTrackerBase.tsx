@@ -41,6 +41,10 @@ const LPPLTrackerBase: React.FC<Props> = ({
   const [maxIterSetting, setMaxIterSetting] = useState(1000)
   const [restartsSetting, setRestartsSetting] = useState(6)
   const [tolSetting, setTolSetting] = useState(1e-9)
+  // Temporary input values for advanced settings
+  const [maxIterInput, setMaxIterInput] = useState("1000")
+  const [restartsInput, setRestartsInput] = useState("6")
+  const [tolInput, setTolInput] = useState("1e-9")
 
   const msPerDay = 24 * 60 * 60 * 1000
   const defaultEndDate = useMemo(() => new Date(), [])
@@ -55,6 +59,80 @@ const LPPLTrackerBase: React.FC<Props> = ({
     defaultEndDate.toISOString().slice(0, 10)
   )
   const [customSymbolInput, setCustomSymbolInput] = useState(initialSymbol)
+  const [customStartInput, setCustomStartInput] = useState(
+    defaultStartDate.toISOString().slice(0, 10)
+  )
+  const [customEndInput, setCustomEndInput] = useState(
+    defaultEndDate.toISOString().slice(0, 10)
+  )
+
+  // Sync input values when settings change externally
+  useEffect(() => {
+    setMaxIterInput(String(maxIterSetting))
+  }, [maxIterSetting])
+
+  useEffect(() => {
+    setRestartsInput(String(restartsSetting))
+  }, [restartsSetting])
+
+  useEffect(() => {
+    setTolInput(String(tolSetting))
+  }, [tolSetting])
+
+  useEffect(() => {
+    setCustomStartInput(customStart)
+  }, [customStart])
+
+  useEffect(() => {
+    setCustomEndInput(customEnd)
+  }, [customEnd])
+
+  // Apply advanced settings
+  const applyMaxIter = () => {
+    const val = Number(maxIterInput)
+    if (!Number.isNaN(val) && val >= 10) {
+      setMaxIterSetting(val)
+    } else {
+      setMaxIterInput(String(maxIterSetting))
+    }
+  }
+
+  const applyRestarts = () => {
+    const val = Number(restartsInput)
+    if (!Number.isNaN(val) && val >= 1) {
+      setRestartsSetting(val)
+    } else {
+      setRestartsInput(String(restartsSetting))
+    }
+  }
+
+  const applyTol = () => {
+    const val = Number(tolInput)
+    if (!Number.isNaN(val) && val > 0) {
+      setTolSetting(val)
+    } else {
+      setTolInput(String(tolSetting))
+    }
+  }
+
+  // Apply custom date range
+  const applyCustomStart = () => {
+    const val = customStartInput.trim()
+    if (val) {
+      setCustomStart(val)
+    } else {
+      setCustomStartInput(customStart)
+    }
+  }
+
+  const applyCustomEnd = () => {
+    const val = customEndInput.trim()
+    if (val) {
+      setCustomEnd(val)
+    } else {
+      setCustomEndInput(customEnd)
+    }
+  }
 
   const fetchAndFit = useCallback(
     async (daysArg?: number, startArg?: number, endArg?: number) => {
@@ -199,10 +277,17 @@ const LPPLTrackerBase: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setShowAdvanced((s) => !s)}
-                  className="btn-secondary h-10 px-3 flex items-center gap-2 rounded-lg text-sm"
+                  className={`btn-secondary h-10 px-3 flex items-center gap-2 rounded-lg text-sm ${
+                    showAdvanced ? "ring-2 ring-accent/20" : ""
+                  }`}
                   title="高级设置"
                 >
-                  <Settings size={16} />
+                  <Settings
+                    size={16}
+                    className={`transition-transform ${
+                      showAdvanced ? "rotate-90" : ""
+                    }`}
+                  />
                   <span className="hidden sm:inline">高级</span>
                 </button>
                 <button
@@ -226,7 +311,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     }
                   }}
                   disabled={loading}
-                  className="btn-primary h-10 px-3 flex items-center gap-2 rounded-lg disabled:opacity-50 text-sm font-medium"
+                  className="btn-primary h-10 px-3 flex items-center gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium hover:shadow-lg"
                   title="刷新数据"
                 >
                   <RefreshCw
@@ -240,29 +325,40 @@ const LPPLTrackerBase: React.FC<Props> = ({
 
             {/* Custom Date Range */}
             {useCustomRange && (
-              <div className="flex flex-wrap items-center gap-2 mt-3">
+              <div className="flex flex-wrap items-center gap-2 mt-3 animate-in slide-in-from-top duration-200">
                 <input
                   type="date"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                  className="h-10 px-3 text-sm rounded-lg focus:ring-2 focus:ring-accent"
+                  value={customStartInput}
+                  onChange={(e) => setCustomStartInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyCustomStart()
+                  }}
+                  onBlur={applyCustomStart}
+                  className="h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all"
                 />
                 <span className="text-muted text-sm">至</span>
                 <input
                   type="date"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                  className="h-10 px-3 text-sm rounded-lg focus:ring-2 focus:ring-accent"
+                  value={customEndInput}
+                  onChange={(e) => setCustomEndInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyCustomEnd()
+                  }}
+                  onBlur={applyCustomEnd}
+                  className="h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all"
                 />
               </div>
             )}
 
             {/* Advanced Settings */}
             {showAdvanced && (
-              <div className="mt-4 pt-4 border-t border-border-var">
-                <h4 className="text-sm font-medium text-text mb-3">
-                  模型参数配置
-                </h4>
+              <div className="mt-4 pt-4 border-t border-border-var animate-in fade-in duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-text">
+                    模型参数配置
+                  </h4>
+                  <span className="text-xs text-muted">按回车或失焦后生效</span>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs text-muted mb-2">
@@ -272,11 +368,17 @@ const LPPLTrackerBase: React.FC<Props> = ({
                       type="number"
                       min={10}
                       step={10}
-                      value={maxIterSetting}
-                      onChange={(e) =>
-                        setMaxIterSetting(Number(e.target.value))
-                      }
-                      className="w-full h-10 px-3 text-sm rounded-lg focus:ring-2 focus:ring-accent"
+                      value={maxIterInput}
+                      onChange={(e) => setMaxIterInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          applyMaxIter()
+                          e.currentTarget.blur()
+                        }
+                      }}
+                      onBlur={applyMaxIter}
+                      className="w-full h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all"
+                      placeholder="≥10"
                     />
                   </div>
                   <div>
@@ -287,11 +389,17 @@ const LPPLTrackerBase: React.FC<Props> = ({
                       type="number"
                       min={1}
                       step={1}
-                      value={restartsSetting}
-                      onChange={(e) =>
-                        setRestartsSetting(Number(e.target.value))
-                      }
-                      className="w-full h-10 px-3 text-sm rounded-lg focus:ring-2 focus:ring-accent"
+                      value={restartsInput}
+                      onChange={(e) => setRestartsInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          applyRestarts()
+                          e.currentTarget.blur()
+                        }
+                      }}
+                      onBlur={applyRestarts}
+                      className="w-full h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all"
+                      placeholder="≥1"
                     />
                   </div>
                   <div>
@@ -300,12 +408,17 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     </label>
                     <input
                       type="text"
-                      value={String(tolSetting)}
-                      onChange={(e) => {
-                        const v = Number(e.target.value)
-                        if (!Number.isNaN(v) && v > 0) setTolSetting(v)
+                      value={tolInput}
+                      onChange={(e) => setTolInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          applyTol()
+                          e.currentTarget.blur()
+                        }
                       }}
-                      className="w-full h-10 px-3 text-sm rounded-lg focus:ring-2 focus:ring-accent font-mono"
+                      onBlur={applyTol}
+                      className="w-full h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all font-mono"
+                      placeholder=">0"
                     />
                   </div>
                 </div>
@@ -315,7 +428,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
 
           {/* Error Display */}
           {error && (
-            <div className="px-4 sm:px-6 pb-4">
+            <div className="px-4 sm:px-6 pb-4 animate-in slide-in-from-top duration-200">
               <div className="p-3 bg-danger/10 border-l-4 border-l-danger rounded-lg">
                 <p className="text-sm text-danger">{error}</p>
               </div>
@@ -325,7 +438,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
 
         {/* Results Section */}
         {lpplResult && (
-          <>
+          <div className="animate-in fade-in duration-300">
             {/* Risk Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 sm:mb-6">
               {/* Risk Level Card */}
@@ -496,7 +609,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Disclaimer */}
@@ -508,8 +621,8 @@ const LPPLTrackerBase: React.FC<Props> = ({
 
         {/* Loading Overlay */}
         {loading && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-card border border-border-var rounded-xl p-6 flex items-center gap-4 shadow-2xl">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+            <div className="bg-card border border-border-var rounded-xl p-6 flex items-center gap-4 shadow-2xl animate-in scale-in duration-200">
               <RefreshCw size={20} className="animate-spin text-accent" />
               <span className="text-sm text-text">正在加载数据...</span>
             </div>

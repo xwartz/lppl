@@ -230,23 +230,34 @@ body {
 .btn-primary {
   background-color: var(--accent);
   color: var(--accent-text);
-  transition: all 0.2s ease;
+  transition: all 150ms ease-out;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--accent-hover);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transform: translateY(-1px);
+  }
+  
+  .btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .btn-secondary {
   background-color: var(--panel-bg);
   color: var(--text);
   border: 1px solid var(--border);
-  transition: all 0.2s ease;
+  transition: all 150ms ease-out;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--card-bg);
   border-color: var(--accent);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transform: translateY(-1px);
 }
 
 /* Input Styles */
@@ -257,6 +268,14 @@ select {
   background-color: var(--panel-bg);
   color: var(--text);
   border: 1px solid var(--border);
+  transition: all 150ms ease-out;
+  }
+  
+  input[type="text"]:hover,
+  input[type="date"]:hover,
+  input[type="number"]:hover,
+  select:hover {
+    border-color: var(--muted);
 }
 
 input[type="text"]:focus,
@@ -288,4 +307,83 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* Checkbox */
 input[type="checkbox"] {
   accent-color: var(--accent);
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
+
+.slide-in-from-top {
+  animation-name: slide-in-from-top;
+}
+
+.scale-in {
+  animation-name: scale-in;
+}
+
+.duration-200 {
+  animation-duration: 200ms;
+}
+
+.duration-300 {
+  animation-duration: 300ms;
+}
+
+/* Input Focus Animation */
+input:focus {
+  animation: scale-in 150ms ease-out;
+}
+
+/* Button Active State */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+  transition: transform 100ms ease-out;
+}
+
+/* Smooth transitions for interactive elements */
+button,
+input,
+select,
+.btn-primary,
+.btn-secondary {
+  transition: all 150ms ease-out;
 }
