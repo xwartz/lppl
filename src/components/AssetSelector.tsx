@@ -12,7 +12,7 @@ const AssetSelector: React.FC<Props> = ({ symbol, setSymbol }) => {
     <select
       value={symbol}
       onChange={(e) => setSymbol(e.target.value)}
-      className="select-input"
+      className="h-10 px-3 text-sm rounded-lg focus:ring-2 focus:ring-accent transition-all"
     >
       {symbols.map((s) => (
         <option key={s} value={s}>
