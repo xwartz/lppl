@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw, Settings, Calendar } from "lucide-react"
 import PriceChart from "./PriceChart"
 import { fitLppl } from "../lib/lppl"
 import type { KlineData, LPPLResult } from "../lib/lppl"
+import { useURLState } from "../lib/use-url-state"
 
 type FetchArgs = {
   days?: number
@@ -30,88 +31,90 @@ const LPPLTrackerBase: React.FC<Props> = ({
   priceFormatter,
   daysOptions,
 }) => {
-  const [symbol, setSymbol] = useState(initialSymbol)
-  const [priceData, setPriceData] = useState<KlineData[]>([])
-  const [lpplResult, setLpplResult] = useState<LPPLResult | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [days, setDays] = useState(daysOptions[0] ?? 100)
-  const [useCustomRange, setUseCustomRange] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
-  const [maxIterSetting, setMaxIterSetting] = useState(1000)
-  const [restartsSetting, setRestartsSetting] = useState(6)
-  const [tolSetting, setTolSetting] = useState(1e-9)
-  // Temporary input values for advanced settings
-  const [maxIterInput, setMaxIterInput] = useState("1000")
-  const [restartsInput, setRestartsInput] = useState("6")
-  const [tolInput, setTolInput] = useState("1e-9")
-
   const msPerDay = 24 * 60 * 60 * 1000
   const defaultEndDate = useMemo(() => new Date(), [])
   const defaultStartDate = useMemo(
     () => new Date(Date.now() - (daysOptions[0] ?? 100) * msPerDay),
     [daysOptions, msPerDay]
   )
-  const [customStart, setCustomStart] = useState(
-    defaultStartDate.toISOString().slice(0, 10)
-  )
-  const [customEnd, setCustomEnd] = useState(
-    defaultEndDate.toISOString().slice(0, 10)
-  )
-  const [customSymbolInput, setCustomSymbolInput] = useState(initialSymbol)
-  const [customStartInput, setCustomStartInput] = useState(
-    defaultStartDate.toISOString().slice(0, 10)
-  )
-  const [customEndInput, setCustomEndInput] = useState(
-    defaultEndDate.toISOString().slice(0, 10)
-  )
 
-  // Sync input values when settings change externally
+  // URL-synced state
+  const urlState = useURLState({
+    symbol: initialSymbol,
+    days: daysOptions[0] ?? 100,
+    useCustomRange: false,
+    customStart: defaultStartDate.toISOString().slice(0, 10),
+    customEnd: defaultEndDate.toISOString().slice(0, 10),
+    maxIter: 1000,
+    restarts: 6,
+    tol: 1e-9,
+    showAdvanced: false,
+  })
+
+  // Local state (not synced to URL)
+  const [priceData, setPriceData] = useState<KlineData[]>([])
+  const [lpplResult, setLpplResult] = useState<LPPLResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  // Temporary input values for form fields
+  const [maxIterInput, setMaxIterInput] = useState(String(urlState.maxIter))
+  const [restartsInput, setRestartsInput] = useState(String(urlState.restarts))
+  const [tolInput, setTolInput] = useState(String(urlState.tol))
+  const [customSymbolInput, setCustomSymbolInput] = useState(urlState.symbol)
+  const [customStartInput, setCustomStartInput] = useState(urlState.customStart)
+  const [customEndInput, setCustomEndInput] = useState(urlState.customEnd)
+
+  // Sync input values when URL state changes
   useEffect(() => {
-    setMaxIterInput(String(maxIterSetting))
-  }, [maxIterSetting])
+    setMaxIterInput(String(urlState.maxIter))
+  }, [urlState.maxIter])
 
   useEffect(() => {
-    setRestartsInput(String(restartsSetting))
-  }, [restartsSetting])
+    setRestartsInput(String(urlState.restarts))
+  }, [urlState.restarts])
 
   useEffect(() => {
-    setTolInput(String(tolSetting))
-  }, [tolSetting])
+    setTolInput(String(urlState.tol))
+  }, [urlState.tol])
 
   useEffect(() => {
-    setCustomStartInput(customStart)
-  }, [customStart])
+    setCustomStartInput(urlState.customStart)
+  }, [urlState.customStart])
 
   useEffect(() => {
-    setCustomEndInput(customEnd)
-  }, [customEnd])
+    setCustomEndInput(urlState.customEnd)
+  }, [urlState.customEnd])
+
+  useEffect(() => {
+    setCustomSymbolInput(urlState.symbol)
+  }, [urlState.symbol])
 
   // Apply advanced settings
   const applyMaxIter = () => {
     const val = Number(maxIterInput)
     if (!Number.isNaN(val) && val >= 10) {
-      setMaxIterSetting(val)
+      urlState.setMaxIter(val)
     } else {
-      setMaxIterInput(String(maxIterSetting))
+      setMaxIterInput(String(urlState.maxIter))
     }
   }
 
   const applyRestarts = () => {
     const val = Number(restartsInput)
     if (!Number.isNaN(val) && val >= 1) {
-      setRestartsSetting(val)
+      urlState.setRestarts(val)
     } else {
-      setRestartsInput(String(restartsSetting))
+      setRestartsInput(String(urlState.restarts))
     }
   }
 
   const applyTol = () => {
     const val = Number(tolInput)
     if (!Number.isNaN(val) && val > 0) {
-      setTolSetting(val)
+      urlState.setTol(val)
     } else {
-      setTolInput(String(tolSetting))
+      setTolInput(String(urlState.tol))
     }
   }
 
@@ -119,18 +122,18 @@ const LPPLTrackerBase: React.FC<Props> = ({
   const applyCustomStart = () => {
     const val = customStartInput.trim()
     if (val) {
-      setCustomStart(val)
+      urlState.setCustomStart(val)
     } else {
-      setCustomStartInput(customStart)
+      setCustomStartInput(urlState.customStart)
     }
   }
 
   const applyCustomEnd = () => {
     const val = customEndInput.trim()
     if (val) {
-      setCustomEnd(val)
+      urlState.setCustomEnd(val)
     } else {
-      setCustomEndInput(customEnd)
+      setCustomEndInput(urlState.customEnd)
     }
   }
 
@@ -140,16 +143,16 @@ const LPPLTrackerBase: React.FC<Props> = ({
       setError("")
       try {
         const series = await fetchSeries({
-          symbol,
+          symbol: urlState.symbol,
           days: daysArg,
           start: startArg,
           end: endArg,
         })
         setPriceData(series)
         const res = fitLppl(series, {
-          maxIter: maxIterSetting,
-          restarts: restartsSetting,
-          tol: tolSetting,
+          maxIter: urlState.maxIter,
+          restarts: urlState.restarts,
+          tol: urlState.tol,
         })
         setLpplResult(res)
       } catch (err) {
@@ -158,12 +161,8 @@ const LPPLTrackerBase: React.FC<Props> = ({
         setLoading(false)
       }
     },
-    [fetchSeries, symbol, maxIterSetting, restartsSetting, tolSetting]
+    [fetchSeries, urlState.symbol, urlState.maxIter, urlState.restarts, urlState.tol]
   )
-
-  useEffect(() => {
-    setCustomSymbolInput(symbol)
-  }, [symbol])
 
   const applyCustomSymbol = () => {
     const s = customSymbolInput.trim().toUpperCase()
@@ -172,14 +171,14 @@ const LPPLTrackerBase: React.FC<Props> = ({
       return
     }
     setError("")
-    setSymbol(s)
+    urlState.setSymbol(s)
   }
 
   useEffect(() => {
-    if (useCustomRange) {
-      const s = new Date(customStart)
+    if (urlState.useCustomRange) {
+      const s = new Date(urlState.customStart)
       s.setHours(0, 0, 0, 0)
-      const e = new Date(customEnd)
+      const e = new Date(urlState.customEnd)
       e.setHours(23, 59, 59, 999)
       if (
         Number.isNaN(s.getTime()) ||
@@ -191,9 +190,9 @@ const LPPLTrackerBase: React.FC<Props> = ({
       }
       fetchAndFit(undefined, s.getTime(), e.getTime())
     } else {
-      fetchAndFit(days)
+      fetchAndFit(urlState.days)
     }
-  }, [days, symbol, fetchAndFit, useCustomRange, customStart, customEnd])
+  }, [urlState.days, urlState.symbol, fetchAndFit, urlState.useCustomRange, urlState.customStart, urlState.customEnd])
 
   const chartData = priceData.map((d, i) => ({
     date: new Date(d.time).toLocaleDateString(),
@@ -249,18 +248,18 @@ const LPPLTrackerBase: React.FC<Props> = ({
                 <label className="flex items-center gap-2 text-sm text-text cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    checked={useCustomRange}
-                    onChange={(e) => setUseCustomRange(e.target.checked)}
+                    checked={urlState.useCustomRange}
+                    onChange={(e) => urlState.setUseCustomRange(e.target.checked)}
                     className="w-4 h-4 rounded"
                   />
                   <Calendar size={14} className="text-muted" />
                   <span className="hidden sm:inline">自定义时间</span>
                 </label>
 
-                {!useCustomRange && (
+                {!urlState.useCustomRange && (
                   <select
-                    value={days}
-                    onChange={(e) => setDays(Number(e.target.value))}
+                    value={urlState.days}
+                    onChange={(e) => urlState.setDays(Number(e.target.value))}
                     className="h-10 px-3 text-sm rounded-lg focus:ring-2 focus:ring-accent"
                   >
                     {daysOptions.map((opt) => (
@@ -276,26 +275,26 @@ const LPPLTrackerBase: React.FC<Props> = ({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowAdvanced((s) => !s)}
+                  onClick={() => urlState.setShowAdvanced(!urlState.showAdvanced)}
                   className={`btn-secondary h-10 px-3 flex items-center gap-2 rounded-lg text-sm ${
-                    showAdvanced ? "ring-2 ring-accent/20" : ""
+                    urlState.showAdvanced ? "ring-2 ring-accent/20" : ""
                   }`}
                   title="高级设置"
                 >
                   <Settings
                     size={16}
                     className={`transition-transform ${
-                      showAdvanced ? "rotate-90" : ""
+                      urlState.showAdvanced ? "rotate-90" : ""
                     }`}
                   />
                   <span className="hidden sm:inline">高级</span>
                 </button>
                 <button
                   onClick={() => {
-                    if (useCustomRange) {
-                      const s = new Date(customStart)
+                    if (urlState.useCustomRange) {
+                      const s = new Date(urlState.customStart)
                       s.setHours(0, 0, 0, 0)
-                      const e = new Date(customEnd)
+                      const e = new Date(urlState.customEnd)
                       e.setHours(23, 59, 59, 999)
                       if (
                         Number.isNaN(s.getTime()) ||
@@ -307,7 +306,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                       }
                       fetchAndFit(undefined, s.getTime(), e.getTime())
                     } else {
-                      fetchAndFit(days)
+                      fetchAndFit(urlState.days)
                     }
                   }}
                   disabled={loading}
@@ -324,7 +323,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
             </div>
 
             {/* Custom Date Range */}
-            {useCustomRange && (
+            {urlState.useCustomRange && (
               <div className="flex flex-wrap items-center gap-2 mt-3 animate-in slide-in-from-top duration-200">
                 <input
                   type="date"
@@ -351,7 +350,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
             )}
 
             {/* Advanced Settings */}
-            {showAdvanced && (
+            {urlState.showAdvanced && (
               <div className="mt-4 pt-4 border-t border-border-var animate-in fade-in duration-200">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-medium text-text">
@@ -489,7 +488,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   约{" "}
                   {Math.round(
                     (lpplResult.criticalDate!.getTime() -
-                      new Date(customEnd).getTime()) /
+                      new Date(urlState.customEnd).getTime()) /
                       (1000 * 86400)
                   )}{" "}
                   天后
