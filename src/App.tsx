@@ -1,45 +1,94 @@
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom"
 import CryptoLPPLPage from "./pages/CryptoLPPLPage"
 import StockLPPLPage from "./pages/StockLPPLPage"
-import { Bitcoin, ChartCandlestick } from "lucide-react"
+import ThemeToggle from "./components/ThemeToggle"
+import { Bitcoin, TrendingUp } from "lucide-react"
 
 function App() {
-  const linkBase =
-    "px-3 py-2 rounded-md text-sm border border-border-var bg-panel hover:bg-gray-100"
-  const linkActive = "bg-accent text-white border-transparent"
   return (
     <BrowserRouter>
       <div className="min-h-screen app-root">
-        <header className="max-w-7xl mx-auto px-6 pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold heading">
-                LPPL 泡沫追踪器
-              </h1>
-              <p className="text-muted text-sm mt-1">分市场：数字货币｜股票</p>
+        {/* Header */}
+        <header className="sticky top-0 z-50 border-b border-border-var bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+          <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              {/* Logo */}
+              <div className="flex items-center gap-6">
+                <h1 className="text-lg font-semibold tracking-tight text-text">
+                  LPPL 泡沫追踪器
+                </h1>
+
+                {/* Navigation Tabs - Minimalist Style */}
+                <nav className="hidden sm:flex items-center gap-1 border border-border-var rounded-lg p-1 bg-panel">
+                  <NavLink
+                    to="/"
+                    end
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-card shadow-sm text-text"
+                          : "text-muted hover:text-text"
+                      }`
+                    }
+                  >
+                    <Bitcoin size={14} />
+                    <span>数字货币</span>
+                  </NavLink>
+                  <NavLink
+                    to="/stocks"
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-card shadow-sm text-text"
+                          : "text-muted hover:text-text"
+                      }`
+                    }
+                  >
+                    <TrendingUp size={14} />
+                    <span>股票市场</span>
+                  </NavLink>
+                </nav>
+              </div>
+
+              {/* Mobile Navigation & Theme Toggle */}
+              <div className="flex items-center gap-2">
+                {/* Mobile Navigation */}
+                <nav className="flex sm:hidden items-center gap-1 border border-border-var rounded-lg p-1 bg-panel">
+                  <NavLink
+                    to="/"
+                    end
+                    className={({ isActive }) =>
+                      `flex items-center justify-center w-9 h-9 rounded-md transition-all ${
+                        isActive
+                          ? "bg-card shadow-sm text-text"
+                          : "text-muted hover:text-text"
+                      }`
+                    }
+                  >
+                    <Bitcoin size={16} />
+                  </NavLink>
+                  <NavLink
+                    to="/stocks"
+                    className={({ isActive }) =>
+                      `flex items-center justify-center w-9 h-9 rounded-md transition-all ${
+                        isActive
+                          ? "bg-card shadow-sm text-text"
+                          : "text-muted hover:text-text"
+                      }`
+                    }
+                  >
+                    <TrendingUp size={16} />
+                  </NavLink>
+                </nav>
+
+                <ThemeToggle />
+              </div>
             </div>
-            <nav className="flex items-center gap-2">
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : ""}`
-                }
-              >
-                <Bitcoin className="text-warning" size={32} />
-              </NavLink>
-              <NavLink
-                to="/stocks"
-                className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : ""}`
-                }
-              >
-                <ChartCandlestick className="text-info" size={32} />
-              </NavLink>
-            </nav>
           </div>
         </header>
-        <main>
+
+        {/* Main Content */}
+        <main className="bg-app-bg">
           <Routes>
             <Route path="/" element={<CryptoLPPLPage />} />
             <Route path="/stocks" element={<StockLPPLPage />} />

@@ -27,19 +27,19 @@ const PriceChart: React.FC<Props> = ({ data, priceFormatter }) => {
   const { theme } = useTheme()
   const [chartHeight, setChartHeight] = useState<number>(400)
 
-  // set responsive chart height based on viewport width
+  // Responsive chart height
   useEffect(() => {
     const calc = () => {
       if (typeof window === "undefined") return
       const w = window.innerWidth
-      // Tailwind 'sm' breakpoint is 640px; choose a compact height for small screens
-      setChartHeight(w < 640 ? 260 : 400)
+      setChartHeight(w < 640 ? 280 : 400)
     }
     calc()
     window.addEventListener("resize", calc)
     return () => window.removeEventListener("resize", calc)
   }, [])
-  // detect system dark when pref === 'system'
+
+  // Detect system dark mode when theme is 'system'
   const systemDark =
     typeof window !== "undefined" &&
     window.matchMedia &&
@@ -48,66 +48,79 @@ const PriceChart: React.FC<Props> = ({ data, priceFormatter }) => {
     theme === ("dark" as ThemePref) ||
     (theme === ("system" as ThemePref) && systemDark)
 
-  const gridStroke = isDark ? "rgba(255,255,255,0.04)" : "#e0e0e0"
-  const axisStroke = isDark ? "#9ca3af" : "#374151"
+  // Chart colors based on theme
+  const gridStroke = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"
+  const axisColor = isDark ? "#737373" : "#737373"
+  const actualLineColor = isDark ? "#06b6d4" : "#0284c7"
+  const fittedLineColor = isDark ? "#fafafa" : "#171717"
+
   const tooltipStyle = isDark
     ? {
-        backgroundColor: "rgba(17,24,39,0.92)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 8,
-        color: "#e5e7eb",
+        backgroundColor: "#171717",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: "8px",
+        color: "#ffffff",
+        padding: "12px",
       }
     : {
-        backgroundColor: "rgba(255,255,255,0.96)",
-        border: "1px solid rgba(0,0,0,0.06)",
-        borderRadius: 8,
+        backgroundColor: "#ffffff",
+        border: "1px solid rgba(0,0,0,0.08)",
+        borderRadius: "8px",
+        color: "#000000",
+        padding: "12px",
       }
 
   return (
     <ResponsiveContainer width="100%" height={chartHeight}>
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-        <XAxis dataKey="date" stroke={axisStroke} tick={{ fontSize: 12 }} />
+      <LineChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+        <CartesianGrid strokeDasharray="4 4" stroke={gridStroke} />
+        <XAxis
+          dataKey="date"
+          stroke={axisColor}
+          tick={{ fontSize: 12, fill: axisColor }}
+          tickLine={{ stroke: gridStroke }}
+        />
         <YAxis
-          stroke={axisStroke}
-          tick={{ fontSize: 12 }}
+          stroke={axisColor}
+          tick={{ fontSize: 12, fill: axisColor }}
+          tickLine={{ stroke: gridStroke }}
           domain={["dataMin", "dataMax"]}
           tickFormatter={(v) => priceFormatter(Number(v))}
         />
         <Tooltip
           contentStyle={tooltipStyle}
+          labelStyle={{
+            fontSize: "12px",
+            marginBottom: "8px",
+            fontWeight: 600,
+          }}
+          itemStyle={{ fontSize: "12px" }}
           formatter={(value: number | string) =>
             typeof value === "number" ? priceFormatter(value) : value
           }
         />
-        <Legend />
-        {
-          // read semantic colors from CSS variables so chart matches theme tokens
-        }
+        <Legend
+          wrapperStyle={{ fontSize: "14px", paddingTop: "16px" }}
+          iconType="line"
+        />
         <Line
           type="monotone"
           dataKey="actual"
-          stroke={
-            getComputedStyle(document.documentElement).getPropertyValue(
-              "--warning"
-            ) || "#f59e0b"
-          }
+          stroke={actualLineColor}
           strokeWidth={2}
           name="实际价格"
           dot={false}
+          activeDot={{ r: 4 }}
         />
         <Line
           type="monotone"
           dataKey="fitted"
-          stroke={
-            getComputedStyle(document.documentElement).getPropertyValue(
-              "--accent"
-            ) || "#8b5cf6"
-          }
+          stroke={fittedLineColor}
           strokeWidth={2}
-          strokeDasharray="5 5"
+          strokeDasharray="8 4"
           name="LPPL 拟合"
           dot={false}
+          activeDot={{ r: 4 }}
         />
       </LineChart>
     </ResponsiveContainer>

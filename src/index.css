@@ -1,87 +1,291 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Theme variables and shared component classes */
-:root {
-  --bg: #ffffff;
-  --bg-2: #f8fafc;
-  /* make cards slightly lighter and panels slightly tinted so blocks separate clearly in light mode */
-  --card-bg: #ffffff;
-  /* solid white for main cards */
-  --panel-bg: #f8fafc;
-  /* subtle off-white/tint to separate panels */
-  --text: #0f172a;
-  /* slate-900 */
-  --muted: #6b7280;
-  /* slate-500 */
-  --border: rgba(15, 23, 42, 0.08);
-  /* slate-500 */
-  --border: rgba(15, 23, 42, 0.06);
-  --accent: #7c3aed;
-  /* purple-600 */
-  --accent-2: #6b21a8;
+/* Theme Configuration */
+@theme {
+  /* Light Mode Colors */
+  --color-app-bg: #ffffff;
+  --color-card: #ffffff;
+  --color-panel: #f5f5f5;
+  --color-text: #171717;
+  --color-muted: #737373;
+  --color-border: #e5e5e5;
+  --color-accent: #171717;
+  --color-accent-hover: #404040;
+  --color-accent-text: #ffffff;
+  --color-danger: #dc2626;
+  --color-warning: #ea580c;
+  --color-success: #16a34a;
+  --color-info: #0284c7;
 }
 
-/* semantic colors used across components (status / info) */
+/* Design System Variables */
 :root {
-  --danger: #ef4444;
-  /* red-500 */
-  --danger-2: #f87171;
-  /* red-400 */
-  --warning: #f59e0b;
-  /* amber-500 */
-  --warning-2: #fbbf24;
-  /* amber-400 */
-  --success: #10b981;
-  /* emerald-500 */
-  --success-2: #34d399;
-  /* emerald-400 */
-  --info: #2563eb;
-  /* blue-600 */
-  --info-2: #1d4ed8;
-  /* blue-700 */
+  /* Backgrounds */
+  --bg: #ffffff;
+  --card-bg: #ffffff;
+  --panel-bg: #f5f5f5;
+/* Text */
+  --text: #171717;
+  --text-secondary: #525252;
+  --muted: #737373;
+
+    /* Borders */
+    --border: #e5e5e5;
+  /* Accent - Primary Action Color */
+    --accent: #171717;
+    --accent-hover: #404040;
+  --accent-text: #ffffff;
+/* Status Colors */
+  --danger: #dc2626;
+  --warning: #ea580c;
+  --success: #16a34a;
+  --info: #0284c7;
 }
 
 .dark {
-  --bg: #0b1220;
-  /* dark page */
-  --bg-2: #071026;
-  --card-bg: rgba(17, 24, 39, 0.6);
-  --panel-bg: rgba(255, 255, 255, 0.02);
-  --text: #e6eef8;
-  --muted: #9ca3af;
-  --border: rgba(255, 255, 255, 0.06);
-  --accent: #8b5cf6;
-  --accent-2: #7c3aed;
+  /* Backgrounds */
+  --bg: #0a0a0a;
+  --card-bg: #171717;
+  --panel-bg: #262626;
 
-  /* dark variants for semantic colors */
-  --danger: #f87171;
-  /* softer red in dark */
-  --danger-2: #fb7185;
-  --warning: #f59e0b;
-  --warning-2: #fbbf24;
-  --success: #34d399;
-  --success-2: #10b981;
-  --info: #60a5fa;
-  /* lighter blue in dark */
-  --info-2: #3b82f6;
+  /* Text */
+  --text: #fafafa;
+  --text-secondary: #d4d4d4;
+  --muted: #a3a3a3;
+
+  /* Borders */
+  --border: #404040;
+
+  /* Accent - Bright in dark mode for visibility */
+  --accent: #fafafa;
+  --accent-hover: #ffffff;
+    --accent-text: #0a0a0a;
+
+  /* Status Colors - Brighter in dark mode */
+  --danger: #ef4444;
+  --warning: #f97316;
+  --success: #22c55e;
+    --info: #06b6d4;
+
+    /* Update theme colors for dark mode */
+    --color-app-bg: #0a0a0a;
+    --color-card: #171717;
+    --color-panel: #262626;
+    --color-text: #fafafa;
+    --color-muted: #a3a3a3;
+  --color-border: #404040;
+    --color-accent: #fafafa;
+  --color-accent-hover: #ffffff;
+    --color-accent-text: #0a0a0a;
+    --color-danger: #ef4444;
+    --color-warning: #f97316;
+    --color-success: #22c55e;
+    --color-info: #06b6d4;
 }
 
-/* simple utility components that use the CSS vars for consistent light/dark */
+/* Base Styles */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  line-height: 1.6;
+}
+
+/* App Root */
 .app-root {
-  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-2) 100%);
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Scrollbar Styles */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--panel-bg);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+
+  /* Focus Styles */
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: var(--accent);
+  color: var(--accent-text);
+  }
+
+  /* Custom Utility Classes */
+  .bg-app-bg {
+    background-color: var(--bg);
+  }
+
+  .bg-card {
+    background-color: var(--card-bg);
+  }
+
+  .bg-panel {
+    background-color: var(--panel-bg);
+}
+
+.text-text {
   color: var(--text);
 }
 
-.select-input {
-  background: var(--card-bg);
+.text-muted {
+  color: var(--muted);
+}
+
+.border-border-var {
+  border-color: var(--border);
+}
+
+.bg-accent {
+  background-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.bg-accent:hover,
+.hover\:bg-accent-hover:hover {
+  background-color: var(--accent-hover);
+  color: var(--accent-text);
+  }
+
+  .text-accent {
+    color: var(--accent);
+  }
+
+  .text-accent-text {
+    color: var(--accent-text);
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
+.text-warning {
+  color: var(--warning);
+}
+
+.text-success {
+  color: var(--success);
+}
+
+.text-info {
+  color: var(--info);
+}
+
+.border-l-danger {
+  border-left-color: var(--danger);
+}
+
+.border-l-warning {
+  border-left-color: var(--warning);
+}
+
+.border-l-success {
+  border-left-color: var(--success);
+}
+
+.bg-danger\/10 {
+  background-color: rgb(220 38 38 / 0.1);
+}
+
+.dark .bg-danger\/10 {
+  background-color: rgb(239 68 68 / 0.1);
+}
+
+/* Ring colors for focus states */
+.focus\:ring-accent:focus {
+  --tw-ring-color: var(--accent);
+}
+
+/* Button Base Styles */
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--accent-text);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+  background-color: var(--panel-bg);
   color: var(--text);
   border: 1px solid var(--border);
-  padding: 0.4rem 0.75rem;
-  border-radius: 0.5rem;
+  transition: all 0.2s ease;
 }
 
-.heading {
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--card-bg);
+  border-color: var(--accent);
+}
+
+/* Input Styles */
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select {
+  background-color: var(--panel-bg);
   color: var(--text);
+  border: 1px solid var(--border);
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--accent) / 0.1);
+}
+
+.dark input[type="text"],
+.dark input[type="date"],
+.dark input[type="number"],
+.dark select {
+  background-color: var(--panel-bg);
+  border-color: var(--border);
+}
+
+/* Date input styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+  accent-color: var(--accent);
 }
