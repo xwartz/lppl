@@ -12,6 +12,11 @@ const LPPLTracker: React.FC = () => {
   const [error, setError] = useState<string>("")
   const [days, setDays] = useState(20)
   const [useCustomRange, setUseCustomRange] = useState(false)
+  // advanced solver settings for LPPL fitting
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [maxIterSetting, setMaxIterSetting] = useState(1000)
+  const [restartsSetting, setRestartsSetting] = useState(6)
+  const [tolSetting, setTolSetting] = useState(1e-9)
   // date input values in YYYY-MM-DD format
   const msPerDay = 24 * 60 * 60 * 1000
   const defaultEndDate = new Date()
@@ -83,7 +88,11 @@ const LPPLTracker: React.FC = () => {
 
         setPriceData(klines)
         // delegate heavy lifting to shared lib (keeps UI file small)
-        const res = fitLppl(klines)
+        const res = fitLppl(klines, {
+          maxIter: maxIterSetting,
+          restarts: restartsSetting,
+          tol: tolSetting,
+        })
         setLpplResult(res)
       } catch (err) {
         setError(err instanceof Error ? err.message : "未知错误")
@@ -91,7 +100,7 @@ const LPPLTracker: React.FC = () => {
         setLoading(false)
       }
     },
-    [symbol, days, msPerDay]
+    [symbol, days, msPerDay, maxIterSetting, restartsSetting, tolSetting]
   )
 
   // Theme is handled globally by ThemeProvider (useTheme)
@@ -307,9 +316,59 @@ const LPPLTracker: React.FC = () => {
                     <span className="text-sm">刷新</span>
                   </button>
                 </div>
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced((s) => !s)}
+                    className="px-3 py-2 bg-panel border border-border-var rounded-md text-sm hover:bg-gray-100"
+                  >
+                    高级设置
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+
+          {showAdvanced && (
+            <div className="mt-3 mb-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-sm text-muted">最大迭代 (maxIter)</label>
+                <input
+                  type="number"
+                  min={10}
+                  step={10}
+                  value={maxIterSetting}
+                  onChange={(e) => setMaxIterSetting(Number(e.target.value))}
+                  className="w-full bg-card text-text border border-border-var px-2 py-2 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted">
+                  重启次数 (restarts)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={restartsSetting}
+                  onChange={(e) => setRestartsSetting(Number(e.target.value))}
+                  className="w-full bg-card text-text border border-border-var px-2 py-2 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted">收敛容限 (tol)</label>
+                <input
+                  type="text"
+                  value={String(tolSetting)}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    if (!Number.isNaN(v) && v > 0) setTolSetting(v)
+                  }}
+                  className="w-full bg-card text-text border border-border-var px-2 py-2 rounded-md text-sm"
+                />
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="bg-panel text-text border border-border-var px-4 py-3 rounded-lg mb-6 text-danger">

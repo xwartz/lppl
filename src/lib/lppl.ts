@@ -242,6 +242,7 @@ class LPPL {
     initial?: Partial<LPPLParams>
     bounds?: Partial<Record<keyof LPPLParams, [number, number]>>
     maxIter?: number
+    tol?: number
     bootstrap?: number
   }): {
     params: LPPLParams
@@ -276,6 +277,7 @@ class LPPL {
         initial: init,
         bounds: options?.bounds,
         maxIter: options?.maxIter,
+        tol: options?.tol,
       })
       if (!best || res.cost < best.cost) best = res
     }
@@ -453,7 +455,10 @@ const computePredictedPriceCI = (
 }
 
 // --- Public fit function (replaces earlier nelder-mead variant) ---
-export const fitLppl = (data: KlineData[]): LPPLResult => {
+export const fitLppl = (
+  data: KlineData[],
+  options?: { maxIter?: number; restarts?: number; tol?: number }
+): LPPLResult => {
   if (!data || data.length < 10) {
     return {
       params: null,
@@ -482,7 +487,7 @@ export const fitLppl = (data: KlineData[]): LPPLResult => {
   const modelStart = Date.now()
   const lp = new LPPL(normalizedTimes, logPrices)
   const res = lp.fitLMWithRestarts({
-    restarts: 6,
+    restarts: options?.restarts ?? 6,
     initial: {
       A: x0[0],
       B: x0[1],
@@ -492,7 +497,8 @@ export const fitLppl = (data: KlineData[]): LPPLResult => {
       omega: x0[5],
       phi: x0[6],
     },
-    maxIter: 400,
+    maxIter: options?.maxIter ?? 1000,
+    tol: options?.tol,
   })
   const modelEnd = Date.now()
 
