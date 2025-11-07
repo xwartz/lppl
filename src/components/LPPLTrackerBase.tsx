@@ -249,7 +249,9 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   <input
                     type="checkbox"
                     checked={urlState.useCustomRange}
-                    onChange={(e) => urlState.setUseCustomRange(e.target.checked)}
+                    onChange={(e) =>
+                      urlState.setUseCustomRange(e.target.checked)
+                    }
                     className="w-4 h-4 rounded"
                   />
                   <Calendar size={14} className="text-muted" />
@@ -275,7 +277,9 @@ const LPPLTrackerBase: React.FC<Props> = ({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => urlState.setShowAdvanced(!urlState.showAdvanced)}
+                  onClick={() =>
+                    urlState.setShowAdvanced(!urlState.showAdvanced)
+                  }
                   className={`btn-secondary h-10 px-3 flex items-center gap-2 rounded-lg text-sm ${
                     urlState.showAdvanced ? "ring-2 ring-accent/20" : ""
                   }`}
@@ -488,7 +492,9 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   约{" "}
                   {Math.round(
                     (lpplResult.criticalDate!.getTime() -
-                      new Date(urlState.customEnd).getTime()) /
+                      (priceData.length > 0
+                        ? priceData[priceData.length - 1].time
+                        : Date.now())) /
                       (1000 * 86400)
                   )}{" "}
                   天后
