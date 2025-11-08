@@ -161,7 +161,13 @@ const LPPLTrackerBase: React.FC<Props> = ({
         setLoading(false)
       }
     },
-    [fetchSeries, urlState.symbol, urlState.maxIter, urlState.restarts, urlState.tol]
+    [
+      fetchSeries,
+      urlState.symbol,
+      urlState.maxIter,
+      urlState.restarts,
+      urlState.tol,
+    ]
   )
 
   const applyCustomSymbol = () => {
@@ -192,7 +198,14 @@ const LPPLTrackerBase: React.FC<Props> = ({
     } else {
       fetchAndFit(urlState.days)
     }
-  }, [urlState.days, urlState.symbol, fetchAndFit, urlState.useCustomRange, urlState.customStart, urlState.customEnd])
+  }, [
+    urlState.days,
+    urlState.symbol,
+    fetchAndFit,
+    urlState.useCustomRange,
+    urlState.customStart,
+    urlState.customEnd,
+  ])
 
   const chartData = priceData.map((d, i) => ({
     date: new Date(d.time).toLocaleDateString(),

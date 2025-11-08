@@ -33,6 +33,10 @@ export interface LPPLResult {
 // --- LPPL model & LM solver (lightweight port from lppl-p.ts) ---
 const EPS = 1e-8
 
+// Separable LPPLS (A, B, C1, C2 are linear for fixed tc, m, omega)
+// Our public params keep C, phi; we map C1/C2 -> (C, phi) with:
+//   C = sqrt(C1^2 + C2^2), phi = atan2(-C2, C1)
+
 const model = (theta: number[], t: number) => {
   // vector order: [A, B, C, tc, m, omega, phi]
   const [A, B, C, tc, m, omega, phi] = theta
@@ -135,6 +139,226 @@ class LPPL {
       x[i] = s / (M[i][i] || 1e-12)
     }
     return x
+  }
+
+  // --- Separable least squares helpers (lppls-style) ---
+  private buildDesignMatrix(
+    tc: number,
+    m: number,
+    omega: number
+  ): { X: number[][]; idx: number[] } {
+    const X: number[][] = []
+    const idx: number[] = []
+    for (let i = 0; i < this.t.length; i++) {
+      const dt = tc - this.t[i]
+      if (!Number.isFinite(dt) || dt <= 0) continue
+      const x = Math.max(dt, EPS)
+      const xm = Math.pow(x, m)
+      const ln = Math.log(x)
+      const cosw = Math.cos(omega * ln)
+      const sinw = Math.sin(omega * ln)
+      X.push([1, xm, xm * cosw, xm * sinw])
+      idx.push(i)
+    }
+    return { X, idx }
+  }
+
+  private solveOLS(X: number[][], y: number[]): number[] | null {
+    if (X.length === 0) return null
+    const nRows = X.length
+    const nCols = X[0].length
+    const XtX: number[][] = Array.from({ length: nCols }, () =>
+      new Array(nCols).fill(0)
+    )
+    const Xty: number[] = new Array(nCols).fill(0)
+    for (let i = 0; i < nRows; i++) {
+      const row = X[i]
+      for (let a = 0; a < nCols; a++) {
+        Xty[a] += row[a] * y[i]
+        for (let b = 0; b < nCols; b++) XtX[a][b] += row[a] * row[b]
+      }
+    }
+    for (let d = 0; d < nCols; d++) XtX[d][d] += 1e-12
+    return this.solveLinearSystem(XtX, Xty)
+  }
+
+  private evaluateSeparable(
+    tc: number,
+    m: number,
+    omega: number
+  ): {
+    ok: boolean
+    A?: number
+    B?: number
+    C?: number
+    phi?: number
+    sse?: number
+    O?: number
+    D?: number
+  } {
+    if (!Number.isFinite(tc) || !Number.isFinite(m) || !Number.isFinite(omega))
+      return { ok: false }
+    const { X, idx } = this.buildDesignMatrix(tc, m, omega)
+    if (X.length < 5) return { ok: false }
+    const ysub = idx.map((i) => this.y[i])
+    const beta = this.solveOLS(X, ysub)
+    if (!beta) return { ok: false }
+    const [A, B, C1, C2] = beta
+    let sse = 0
+    for (let r = 0; r < X.length; r++) {
+      const yhat = A + B * X[r][1] + C1 * X[r][2] + C2 * X[r][3]
+      const e = yhat - ysub[r]
+      sse += e * e
+    }
+    const C = Math.hypot(C1, C2)
+    const phi = Math.atan2(-C2, C1)
+    if (!Number.isFinite(C) || !Number.isFinite(phi)) return { ok: false }
+    // Compute O (number of oscillations over window) and D (damping proxy)
+    // O = (omega / (2*pi)) * ln((tc - t1) / (tc - t2)), where t1=min(t), t2=max(t)
+    const t1 = Math.min(...this.t)
+    const t2 = Math.max(...this.t)
+    let O: number | undefined
+    if (tc > t2) {
+      const num = Math.log(Math.max((tc - t1) / Math.max(tc - t2, EPS), EPS))
+      O = (omega / (2 * Math.PI)) * num
+    }
+    // D proxy per common practice: D = (m * |B|) / (omega * |C|)
+    // Only defined when C != 0
+    let D: number | undefined
+    if (C > 1e-12 && omega > 0) {
+      D = (m * Math.abs(B)) / (omega * Math.abs(C))
+    }
+    return { ok: true, A, B, C, phi, sse, O, D }
+  }
+
+  fitSeparableRandom(options?: {
+    maxSearches?: number
+    bounds?: {
+      m?: [number, number]
+      omega?: [number, number]
+      tc?: [number, number]
+    }
+    filters?: {
+      BNegative?: boolean
+      O?: [number, number] // allowed oscillation count range
+      D?: [number, number] // allowed damping proxy range
+    }
+    seed?: number
+  }): { params: LPPLParams; cost: number; iterations: number } {
+    const lastT = Math.max(...this.t)
+    const firstT = Math.min(...this.t)
+    const window = Math.max(1, lastT - firstT)
+    const defaultBounds = {
+      m: [0.1, 0.9] as [number, number],
+      omega: [6, 13] as [number, number],
+      tc: [lastT + 1e-3, lastT + Math.max(1, window * 1.5)] as [number, number],
+    }
+    const b = Object.assign({}, defaultBounds, options?.bounds || {})
+    const f = Object.assign(
+      {
+        BNegative: true,
+        O: [2.5, 13] as [number, number],
+        D: [0.5, 1.0] as [number, number],
+      },
+      options?.filters || {}
+    )
+    const maxSearches = Math.max(10, options?.maxSearches ?? 50)
+
+    let best: { params: LPPLParams; cost: number; iterations: number } | null =
+      null
+    // Deterministic RNG (Park–Miller LCG)
+    const rng = (() => {
+      const mod = 2147483647
+      const mul = 16807
+      let seed = Math.floor(
+        options?.seed && Number.isFinite(options.seed)
+          ? (options.seed as number)
+          : 1234567
+      )
+      if (seed <= 0) seed = 1234567
+      return () => {
+        seed = (seed * mul) % mod
+        return seed / mod
+      }
+    })()
+    let iters = 0
+
+    for (let s = 0; s < maxSearches; s++) {
+      const m = b.m![0] + rng() * (b.m![1] - b.m![0])
+      const omega = b.omega![0] + rng() * (b.omega![1] - b.omega![0])
+      const tc = b.tc![0] + rng() * (b.tc![1] - b.tc![0])
+      const evalRes = this.evaluateSeparable(tc, m, omega)
+      iters++
+      if (!evalRes.ok) continue
+      const { A, B, C, phi, sse, O, D } = evalRes
+      if (f.BNegative && !(B! < 0)) continue
+      if (Number.isFinite(O) && f.O) {
+        if (!(O! >= f.O[0] && O! <= f.O[1])) continue
+      }
+      if (Number.isFinite(D) && f.D) {
+        if (!(D! >= f.D[0] && D! <= f.D[1])) continue
+      }
+      const rmse = Math.sqrt(sse! / this.t.length)
+      const candidate: LPPLParams = {
+        A: A!,
+        B: B!,
+        C: C!,
+        tc,
+        m,
+        omega,
+        phi: phi!,
+      }
+      if (!best || rmse < best.cost) {
+        best = { params: candidate, cost: rmse, iterations: iters }
+      }
+    }
+
+    if (best) {
+      const { params } = best
+      const refineSteps = Math.ceil(maxSearches * 0.5)
+      for (let k = 0; k < refineSteps; k++) {
+        const m = Math.min(
+          b.m![1],
+          Math.max(b.m![0], params.m + (rng() - 0.5) * 0.1)
+        )
+        const omega = Math.min(
+          b.omega![1],
+          Math.max(b.omega![0], params.omega + (rng() - 0.5) * 1.0)
+        )
+        const lastT2 = Math.max(...this.t)
+        const firstT2 = Math.min(...this.t)
+        const window2 = Math.max(1, lastT2 - firstT2)
+        const tc = Math.min(
+          b.tc![1],
+          Math.max(
+            b.tc![0],
+            params.tc + (rng() - 0.5) * Math.max(1, window2 * 0.1)
+          )
+        )
+        const evalRes = this.evaluateSeparable(tc, m, omega)
+        iters++
+        if (!evalRes.ok) continue
+        const { A, B, C, phi, sse, O, D } = evalRes
+        if (f.BNegative && !(B! < 0)) continue
+        if (Number.isFinite(O) && f.O) {
+          if (!(O! >= f.O[0] && O! <= f.O[1])) continue
+        }
+        if (Number.isFinite(D) && f.D) {
+          if (!(D! >= f.D[0] && D! <= f.D[1])) continue
+        }
+        const rmse = Math.sqrt(sse! / this.t.length)
+        if (rmse < best.cost) {
+          best = {
+            params: { A: A!, B: B!, C: C!, tc, m, omega, phi: phi! },
+            cost: rmse,
+            iterations: iters,
+          }
+        }
+      }
+    }
+
+    if (best) return best
+    return this.fitLM()
   }
 
   fitLM(options?: {
@@ -244,6 +468,12 @@ class LPPL {
     maxIter?: number
     tol?: number
     bootstrap?: number
+    seed?: number
+    filters?: {
+      BNegative?: boolean
+      O?: [number, number]
+      D?: [number, number]
+    }
   }): {
     params: LPPLParams
     cost: number
@@ -257,35 +487,60 @@ class LPPL {
       null
 
     for (let r = 0; r < restarts; r++) {
-      const perturb = (scale: number) => (Math.random() - 0.5) * scale
       const lastT = Math.max(...this.t)
       const firstT = Math.min(...this.t)
-
-      const init: Partial<LPPLParams> = options?.initial ?? {
-        A:
-          (this.y.reduce((a, b) => a + b, 0) / this.y.length) *
-          (1 + perturb(0.2)),
-        B: -1 * (1 + perturb(1.0)),
-        C: 0.1 * (1 + perturb(1.0)),
-        m: 0.5 * (1 + perturb(0.5)),
-        omega: 8 * (1 + perturb(0.5)),
-        phi: perturb(Math.PI),
-        tc: lastT + (lastT - firstT) * (0.2 + Math.random() * 1.5),
-      }
-
-      const res = this.fitLM({
-        initial: init,
-        bounds: options?.bounds,
-        maxIter: options?.maxIter,
-        tol: options?.tol,
+      const res = this.fitSeparableRandom({
+        maxSearches: Math.max(25, Math.floor((options?.maxIter ?? 200) / 4)),
+        bounds: {
+          m: [0.1, 0.9],
+          omega: [6, 13],
+          tc: [
+            lastT + 1e-3,
+            lastT +
+              Math.max(
+                1,
+                (lastT - firstT) *
+                  (0.8 + (((options?.seed ?? 0) + r + 1) % 997) / 997)
+              ),
+          ],
+        },
+        seed: (options?.seed ?? 0) + r + 1,
+        filters: options?.filters ?? {
+          BNegative: true,
+          O: [2.5, 13],
+          D: [0.5, 1.0],
+        },
       })
       if (!best || res.cost < best.cost) best = res
+    }
+
+    // Optional small LM refinement to compute convergence properly
+    let finalParams = best!.params
+    let finalCost = best!.cost
+    let finalIterations = best!.iterations
+    const maxIterUsed = options?.maxIter ?? 200
+    let converged = false
+    try {
+      const lmRes = this.fitLM({
+        initial: finalParams,
+        bounds: options?.bounds,
+        maxIter: maxIterUsed,
+        tol: options?.tol,
+      })
+      if (Number.isFinite(lmRes.cost) && lmRes.cost <= finalCost) {
+        finalParams = lmRes.params
+        finalCost = lmRes.cost
+        finalIterations = lmRes.iterations
+        converged = lmRes.iterations < maxIterUsed
+      }
+    } catch {
+      // ignore and keep separable result; converged stays false
     }
 
     // bootstrap (optional)
     const bootstrapN = options?.bootstrap ?? 0
     const bootParams: LPPLParams[] = []
-    if (bootstrapN > 0 && best) {
+    if (bootstrapN > 0) {
       const n = this.t.length
       for (let b = 0; b < bootstrapN; b++) {
         const indices = Float64Array.from({ length: n }, () =>
@@ -295,7 +550,7 @@ class LPPL {
         const ySample = Float64Array.from(indices, (i) => this.y[i])
         const sub = new LPPL(tSample, ySample)
         const subRes = sub.fitLM({
-          initial: best.params,
+          initial: finalParams,
           bounds: options?.bounds,
           maxIter: options?.maxIter,
         })
@@ -304,13 +559,13 @@ class LPPL {
     }
 
     const ci: Record<keyof LPPLParams, [number, number]> = {
-      A: [best!.params.A, best!.params.A],
-      B: [best!.params.B, best!.params.B],
-      C: [best!.params.C, best!.params.C],
-      tc: [best!.params.tc, best!.params.tc],
-      m: [best!.params.m, best!.params.m],
-      omega: [best!.params.omega, best!.params.omega],
-      phi: [best!.params.phi, best!.params.phi],
+      A: [finalParams.A, finalParams.A],
+      B: [finalParams.B, finalParams.B],
+      C: [finalParams.C, finalParams.C],
+      tc: [finalParams.tc, finalParams.tc],
+      m: [finalParams.m, finalParams.m],
+      omega: [finalParams.omega, finalParams.omega],
+      phi: [finalParams.phi, finalParams.phi],
     }
 
     if (bootParams.length > 1) {
@@ -323,12 +578,10 @@ class LPPL {
       }
     }
 
-    const maxIterUsed = options?.maxIter ?? 200
-    const converged = best ? best.iterations < maxIterUsed : false
     return {
-      params: best!.params,
-      cost: best!.cost,
-      iterations: best!.iterations,
+      params: finalParams,
+      cost: finalCost,
+      iterations: finalIterations,
       ci,
       sse: undefined,
       converged,
@@ -486,6 +739,14 @@ export const fitLppl = (
 
   const modelStart = Date.now()
   const lp = new LPPL(normalizedTimes, logPrices)
+  // Deterministic seed from data
+  let seed = 1234567
+  for (let i = 0; i < normalizedTimes.length; i++) {
+    const a = Math.floor(normalizedTimes[i] * 1e6)
+    const b = Math.floor(logPrices[i] * 1e6)
+    seed = (seed * 31 + ((a ^ b) & 0xffffffff)) >>> 0
+  }
+  if (seed <= 0) seed = 1234567
   const res = lp.fitLMWithRestarts({
     restarts: options?.restarts ?? 6,
     initial: {
@@ -499,6 +760,7 @@ export const fitLppl = (
     },
     maxIter: options?.maxIter ?? 1000,
     tol: options?.tol,
+    seed,
   })
   const modelEnd = Date.now()
 
@@ -584,4 +846,152 @@ export const fitLppl = (
     predictedPriceLower: ci.lower,
     predictedPriceUpper: ci.upper,
   }
+}
+
+// -------- Nested window scan & confidence indicators --------
+export interface LPPLScanConfig {
+  windowSize: number // number of points in the outer window
+  smallestWindowSize: number // minimal inner window size (points)
+  outerIncrement: number // step in points for outer start
+  innerIncrement: number // step in points for inner start
+  maxIter?: number
+  restarts?: number
+  maxSearches?: number
+  tol?: number
+  seed?: number
+  bounds?: {
+    m?: [number, number]
+    omega?: [number, number]
+    tc?: [number, number]
+  }
+  filters?: {
+    BNegative?: boolean
+    O?: [number, number]
+    D?: [number, number]
+  }
+}
+
+export interface LPPLConfidencePoint {
+  startIndex: number
+  endIndex: number
+  tStart: number // normalized time
+  tEnd: number // normalized time
+  confidence: number // accepted / total
+  fits: number
+  total: number
+  tcMedian?: number // normalized tc median of accepted fits
+  tc25?: number
+  tc75?: number
+}
+
+export interface LPPLConfidenceResult {
+  points: LPPLConfidencePoint[]
+}
+
+export const lpplScanConfidence = (
+  data: KlineData[],
+  cfg: LPPLScanConfig
+): LPPLConfidenceResult => {
+  if (!data || data.length < Math.max(10, cfg.smallestWindowSize)) {
+    return { points: [] }
+  }
+  const times = data.map((d) => d.time / 1000)
+  const prices = data.map((d) => d.close)
+  const t0 = times[0]
+  const normalizedTimes = times.map((t) => (t - t0) / 86400)
+  const logPrices = prices.map((p) => Math.log(p))
+  const n = normalizedTimes.length
+  const endIndex = n - 1
+
+  const windowSize = Math.min(Math.max(5, cfg.windowSize), n)
+  const smallest = Math.min(
+    Math.max(5, cfg.smallestWindowSize),
+    Math.max(5, windowSize - 1)
+  )
+  const outerInc = Math.max(1, cfg.outerIncrement)
+  const innerInc = Math.max(1, cfg.innerIncrement)
+
+  // Deterministic seed from data baseline
+  let baseSeed = 1234567
+  for (let i = 0; i < normalizedTimes.length; i++) {
+    const a = Math.floor(normalizedTimes[i] * 1e6)
+    const b = Math.floor(logPrices[i] * 1e6)
+    baseSeed = (baseSeed * 31 + ((a ^ b) & 0xffffffff)) >>> 0
+  }
+  if (baseSeed <= 0) baseSeed = 1234567
+
+  const points: LPPLConfidencePoint[] = []
+
+  // Outer window slides backward with fixed end at latest point
+  const outerMaxStart = Math.max(0, endIndex - windowSize + 1)
+  for (
+    let start = outerMaxStart;
+    start <= endIndex - smallest;
+    start += outerInc
+  ) {
+    const outerStart = start
+    const outerEnd = endIndex
+    let fits = 0
+    let total = 0
+    const acceptedTc: number[] = []
+
+    // Inner windows: start moves forward within outer, end fixed at latest
+    for (
+      let innerStart = outerStart;
+      innerStart <= outerEnd - smallest + 1;
+      innerStart += innerInc
+    ) {
+      const sliceT = normalizedTimes.slice(innerStart, outerEnd + 1)
+      const sliceY = logPrices.slice(innerStart, outerEnd + 1)
+      if (sliceT.length < smallest) continue
+
+      const lp = new LPPL(sliceT, sliceY)
+      // seed per window to keep determinism and diversity
+      const seed = baseSeed + innerStart * 17 + outerStart * 131
+      const res = lp.fitLMWithRestarts({
+        restarts: cfg.restarts ?? 4,
+        maxIter: cfg.maxIter ?? 300,
+        tol: cfg.tol ?? 1e-9,
+        seed,
+        filters: cfg.filters ?? {
+          BNegative: true,
+          O: [2.5, 13],
+          D: [0.5, 1.0],
+        },
+      })
+      total += 1
+      // Accept any finite cost result (filters applied inside separable search)
+      if (Number.isFinite(res.cost)) {
+        fits += 1
+        if (Number.isFinite(res.params.tc)) acceptedTc.push(res.params.tc)
+      }
+    }
+
+    let confidence = 0
+    if (total > 0) confidence = fits / total
+    acceptedTc.sort((a, b) => a - b)
+    const q = (arr: number[], p: number) => {
+      if (arr.length === 0) return undefined
+      const idx = Math.floor((arr.length - 1) * p)
+      return arr[idx]
+    }
+    const tc25 = q(acceptedTc, 0.25)
+    const tcMedian = q(acceptedTc, 0.5)
+    const tc75 = q(acceptedTc, 0.75)
+
+    points.push({
+      startIndex: outerStart,
+      endIndex: outerEnd,
+      tStart: normalizedTimes[outerStart],
+      tEnd: normalizedTimes[outerEnd],
+      confidence,
+      fits,
+      total,
+      tcMedian,
+      tc25,
+      tc75,
+    })
+  }
+
+  return { points }
 }
