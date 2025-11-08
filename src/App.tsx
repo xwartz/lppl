@@ -2,9 +2,13 @@ import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom"
 import CryptoLPPLPage from "./pages/CryptoLPPLPage"
 import StockLPPLPage from "./pages/StockLPPLPage"
 import ThemeToggle from "./components/ThemeToggle"
+import LanguageToggle from "./components/LanguageToggle"
 import { Bitcoin, TrendingUp } from "lucide-react"
+import { useI18n } from "./lib/i18n"
 
 function App() {
+  const { t } = useI18n()
+
   return (
     <BrowserRouter>
       <div className="min-h-screen app-root">
@@ -15,7 +19,7 @@ function App() {
               {/* Logo */}
               <div className="flex items-center gap-6">
                 <h1 className="text-lg font-semibold tracking-tight text-text">
-                  LPPL 泡沫追踪器
+                  {t("app.title")}
                 </h1>
 
                 {/* Navigation Tabs - Minimalist Style */}
@@ -32,7 +36,7 @@ function App() {
                     }
                   >
                     <Bitcoin size={14} />
-                    <span>数字货币</span>
+                    <span>{t("nav.crypto")}</span>
                   </NavLink>
                   <NavLink
                     to="/stocks"
@@ -45,12 +49,12 @@ function App() {
                     }
                   >
                     <TrendingUp size={14} />
-                    <span>股票市场</span>
+                    <span>{t("nav.stocks")}</span>
                   </NavLink>
                 </nav>
               </div>
 
-              {/* Mobile Navigation & Theme Toggle */}
+              {/* Mobile Navigation & Controls */}
               <div className="flex items-center gap-2">
                 {/* Mobile Navigation */}
                 <nav className="flex sm:hidden items-center gap-1 border border-border-var rounded-lg p-1 bg-panel">
@@ -81,6 +85,7 @@ function App() {
                   </NavLink>
                 </nav>
 
+                <LanguageToggle />
                 <ThemeToggle />
               </div>
             </div>
