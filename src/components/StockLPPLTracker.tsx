@@ -36,7 +36,12 @@ const StockLPPLTracker: React.FC = () => {
     }))
   }
 
-  const validateSymbol = (s: string) => /^[A-Z.-]{1,10}$/.test(s)
+  // Support various stock market formats:
+  // US: AAPL, MSFT, BRK.A, BRK-B
+  // Hong Kong: 0700.HK, 9988.HK
+  // China A-shares: 000001.SZ, 600000.SS
+  // Taiwan: 2330.TW
+  const validateSymbol = (s: string) => /^[A-Z0-9][A-Z0-9.-]{0,19}$/i.test(s)
   const priceFmt = (value: number) => {
     try {
       return new Intl.NumberFormat("en-US", {
