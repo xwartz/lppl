@@ -4,6 +4,7 @@ import PriceChart from "./PriceChart"
 import { fitLppl } from "../lib/lppl"
 import type { KlineData, LPPLResult } from "../lib/lppl"
 import { useURLState } from "../lib/use-url-state"
+import { useI18n } from "../lib/i18n"
 
 type FetchArgs = {
   days?: number
@@ -31,6 +32,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
   priceFormatter,
   daysOptions,
 }) => {
+  const { t, language } = useI18n()
   const msPerDay = 24 * 60 * 60 * 1000
   const defaultEndDate = useMemo(() => new Date(), [])
   const defaultStartDate = useMemo(
@@ -156,7 +158,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
         })
         setLpplResult(res)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "未知错误")
+        setError(err instanceof Error ? err.message : t("error.unknown"))
       } finally {
         setLoading(false)
       }
@@ -167,13 +169,14 @@ const LPPLTrackerBase: React.FC<Props> = ({
       urlState.maxIter,
       urlState.restarts,
       urlState.tol,
+      t,
     ]
   )
 
   const applyCustomSymbol = () => {
     const s = customSymbolInput.trim().toUpperCase()
     if (!validateSymbol(s)) {
-      setError("请输入有效标的代码")
+      setError(t("error.invalid.input"))
       return
     }
     setError("")
@@ -191,7 +194,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
         Number.isNaN(e.getTime()) ||
         e.getTime() < s.getTime()
       ) {
-        setError("自定义日期无效：结束时间必须晚于或等于起始时间")
+        setError(t("error.invalid.date.range"))
         return
       }
       fetchAndFit(undefined, s.getTime(), e.getTime())
@@ -205,6 +208,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
     urlState.useCustomRange,
     urlState.customStart,
     urlState.customEnd,
+    t,
   ])
 
   const chartData = priceData.map((d, i) => ({
@@ -269,7 +273,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     className="w-4 h-4 rounded"
                   />
                   <Calendar size={14} className="text-muted" />
-                  <span className="hidden sm:inline">自定义时间</span>
+                  <span className="hidden sm:inline">{t("time.custom")}</span>
                 </label>
 
                 {!urlState.useCustomRange && (
@@ -280,7 +284,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   >
                     {daysOptions.map((opt) => (
                       <option key={opt} value={opt}>
-                        最近 {opt} 天
+                        {t("time.last")} {opt} {t("time.days")}
                       </option>
                     ))}
                   </select>
@@ -297,7 +301,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   className={`btn-secondary h-10 px-3 flex items-center gap-2 rounded-lg text-sm ${
                     urlState.showAdvanced ? "ring-2 ring-accent/20" : ""
                   }`}
-                  title="高级设置"
+                  title={t("advanced.settings")}
                 >
                   <Settings
                     size={16}
@@ -305,7 +309,9 @@ const LPPLTrackerBase: React.FC<Props> = ({
                       urlState.showAdvanced ? "rotate-90" : ""
                     }`}
                   />
-                  <span className="hidden sm:inline">高级</span>
+                  <span className="hidden sm:inline">
+                    {t("advanced.settings")}
+                  </span>
                 </button>
                 <button
                   onClick={() => {
@@ -319,7 +325,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                         Number.isNaN(e.getTime()) ||
                         e.getTime() < s.getTime()
                       ) {
-                        setError("自定义日期无效")
+                        setError(t("time.invalid.date"))
                         return
                       }
                       fetchAndFit(undefined, s.getTime(), e.getTime())
@@ -329,13 +335,13 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   }}
                   disabled={loading}
                   className="btn-primary h-10 px-3 flex items-center gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium hover:shadow-lg"
-                  title="刷新数据"
+                  title={t("time.refresh")}
                 >
                   <RefreshCw
                     size={16}
                     className={loading ? "animate-spin" : ""}
                   />
-                  <span className="hidden sm:inline">刷新</span>
+                  <span className="hidden sm:inline">{t("time.refresh")}</span>
                 </button>
               </div>
             </div>
@@ -353,7 +359,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   onBlur={applyCustomStart}
                   className="h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all"
                 />
-                <span className="text-muted text-sm">至</span>
+                <span className="text-muted text-sm">{t("time.to")}</span>
                 <input
                   type="date"
                   value={customEndInput}
@@ -372,14 +378,16 @@ const LPPLTrackerBase: React.FC<Props> = ({
               <div className="mt-4 pt-4 border-t border-border-var animate-in fade-in duration-200">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-medium text-text">
-                    模型参数配置
+                    {t("advanced.model.config")}
                   </h4>
-                  <span className="text-xs text-muted">按回车或失焦后生效</span>
+                  <span className="text-xs text-muted">
+                    {t("advanced.apply.hint")}
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs text-muted mb-2">
-                      最大迭代次数
+                      {t("advanced.max.iterations")}
                     </label>
                     <input
                       type="number"
@@ -400,7 +408,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   </div>
                   <div>
                     <label className="block text-xs text-muted mb-2">
-                      重启次数
+                      {t("advanced.restarts")}
                     </label>
                     <input
                       type="number"
@@ -421,7 +429,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   </div>
                   <div>
                     <label className="block text-xs text-muted mb-2">
-                      收敛容限
+                      {t("advanced.tolerance")}
                     </label>
                     <input
                       type="text"
@@ -452,7 +460,6 @@ const LPPLTrackerBase: React.FC<Props> = ({
             </div>
           )}
         </div>
-
         {/* Results Section */}
         {lpplResult && (
           <div className="animate-in fade-in duration-300">
@@ -469,7 +476,9 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     className={getRiskColor(lpplResult.riskLevel)}
                     size={20}
                   />
-                  <h3 className="text-sm font-medium text-text">风险等级</h3>
+                  <h3 className="text-sm font-medium text-text">
+                    {t("risk.level")}
+                  </h3>
                 </div>
                 <p
                   className={`text-2xl sm:text-3xl font-semibold ${getRiskColor(
@@ -477,17 +486,17 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   )}`}
                 >
                   {lpplResult.riskLevel === "high"
-                    ? "高风险"
+                    ? t("risk.high")
                     : lpplResult.riskLevel === "medium"
-                    ? "中等风险"
-                    : "低风险"}
+                    ? t("risk.medium")
+                    : t("risk.low")}
                 </p>
                 {lpplResult.riskReasons &&
                   lpplResult.riskReasons.length > 0 && (
                     <ul className="mt-3 space-y-1">
                       {lpplResult.riskReasons.map((r, idx) => (
                         <li key={idx} className="text-xs text-muted">
-                          • {r}
+                          • {t(r)}
                         </li>
                       ))}
                     </ul>
@@ -497,10 +506,12 @@ const LPPLTrackerBase: React.FC<Props> = ({
               {/* Critical Date Card */}
               <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 shadow-sm">
                 <h3 className="text-sm font-medium text-text mb-3">
-                  预测临界点
+                  {t("critical.point")}
                 </h3>
                 <p className="text-xl sm:text-2xl font-semibold text-info">
-                  {lpplResult.criticalDate?.toLocaleDateString("zh-CN")}
+                  {lpplResult.criticalDate?.toLocaleDateString(
+                    language === "zh" ? "zh-CN" : "en-US"
+                  )}
                 </p>
                 <p className="text-xs text-muted mt-2">
                   {(() => {
@@ -511,18 +522,24 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     const absDays = Math.abs(daysFromNow)
 
                     if (daysFromNow > 0) {
-                      return `约 ${absDays} 天后`
+                      return `${t("critical.about")} ${absDays} ${t(
+                        "critical.days.after"
+                      )}`
                     } else if (daysFromNow < 0) {
-                      return `约 ${absDays} 天前`
+                      return `${t("critical.about")} ${absDays} ${t(
+                        "critical.days.before"
+                      )}`
                     } else {
-                      return "今天"
+                      return t("critical.today")
                     }
                   })()}
                 </p>
                 {lpplResult.predictedPrice &&
                   Number.isFinite(lpplResult.predictedPrice) && (
                     <div className="mt-3 pt-3 border-t border-border-var">
-                      <p className="text-xs text-muted">预测临界价格</p>
+                      <p className="text-xs text-muted">
+                        {t("critical.price")}
+                      </p>
                       <p className="text-base font-semibold text-info mt-1">
                         {priceFormatter(lpplResult.predictedPrice)}
                       </p>
@@ -533,20 +550,22 @@ const LPPLTrackerBase: React.FC<Props> = ({
               {/* Model Fit Card */}
               <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 shadow-sm">
                 <h3 className="text-sm font-medium text-text mb-3">
-                  模型拟合度
+                  {t("model.fit")}
                 </h3>
                 <p className="text-xl sm:text-2xl font-semibold text-accent">
                   {lpplResult.residual.toFixed(2)}
                 </p>
-                <p className="text-xs text-muted mt-2">残差（越小越好）</p>
+                <p className="text-xs text-muted mt-2">{t("model.residual")}</p>
                 <div className="mt-3 pt-3 border-t border-border-var">
-                  <p className="text-xs text-muted">拟合状态</p>
+                  <p className="text-xs text-muted">{t("model.status")}</p>
                   <p
                     className={`text-sm font-medium mt-1 ${
                       lpplResult.converged ? "text-success" : "text-warning"
                     }`}
                   >
-                    {lpplResult.converged ? "✓ 已收敛" : "⚠ 未完全收敛"}
+                    {lpplResult.converged
+                      ? t("model.converged")
+                      : t("model.not.converged")}
                   </p>
                 </div>
               </div>
@@ -555,7 +574,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
             {/* Chart */}
             <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-sm relative">
               <h2 className="text-base sm:text-lg font-semibold text-text mb-4">
-                价格与 LPPL 拟合曲线
+                {t("chart.price.fit")}
               </h2>
               <PriceChart
                 data={chartData}
@@ -567,7 +586,9 @@ const LPPLTrackerBase: React.FC<Props> = ({
                 <div className="absolute inset-0 bg-card/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
                   <div className="flex items-center gap-3">
                     <RefreshCw size={18} className="animate-spin text-accent" />
-                    <span className="text-sm text-text">更新中...</span>
+                    <span className="text-sm text-text">
+                      {t("time.refreshing")}
+                    </span>
                   </div>
                 </div>
               )}
@@ -576,17 +597,21 @@ const LPPLTrackerBase: React.FC<Props> = ({
             {/* Model Parameters */}
             <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 shadow-sm">
               <h2 className="text-base sm:text-lg font-semibold text-text mb-4">
-                LPPL 模型参数
+                {t("params.model")}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-muted mb-1">基线 A (log)</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.baseline.log")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.params?.A.toFixed(3) ?? "-"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">基线 A (price)</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.baseline.price")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.params?.A
                       ? priceFormatter(Math.exp(lpplResult.params.A))
@@ -594,25 +619,33 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">临界时间 tc</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.tc.label")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.params?.tc.toFixed(2) ?? "-"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">幂律指数 m</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.m.label")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.params?.m.toFixed(3) ?? "-"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">角频率 ω</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.omega.label")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.params?.omega.toFixed(3) ?? "-"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">相位 φ</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.phi.label")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.params?.phi.toFixed(3) ?? "-"}
                   </p>
@@ -622,25 +655,29 @@ const LPPLTrackerBase: React.FC<Props> = ({
               {/* Performance Metrics */}
               <div className="mt-4 pt-4 border-t border-border-var grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-muted mb-1">SSE</p>
+                  <p className="text-xs text-muted mb-1">{t("params.sse")}</p>
                   <p className="text-sm font-mono text-text">
                     {(lpplResult.sse ?? 0).toFixed(4)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">RMSE</p>
+                  <p className="text-xs text-muted mb-1">{t("params.rmse")}</p>
                   <p className="text-sm font-mono text-text">
                     {(lpplResult.rmse ?? 0).toFixed(6)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">迭代次数</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.iterations.label")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.iterations ?? "-"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">计算耗时</p>
+                  <p className="text-xs text-muted mb-1">
+                    {t("params.runtime")}
+                  </p>
                   <p className="text-sm font-mono text-text">
                     {lpplResult.runTimeMs ?? 0} ms
                   </p>
@@ -649,14 +686,10 @@ const LPPLTrackerBase: React.FC<Props> = ({
             </div>
           </div>
         )}
-
         {/* Disclaimer */}
         <div className="mt-6 p-3 bg-panel border border-border-var rounded-lg">
-          <p className="text-xs text-muted">
-            ⚠️ 免责声明：LPPL 模型仅供参考，不构成投资建议。
-          </p>
+          <p className="text-xs text-muted">{t("footer.disclaimer")}</p>
         </div>
-
         {/* Subtle Loading Bar */}
         {loading && !lpplResult && (
           <div className="fixed top-0 left-0 right-0 z-50">

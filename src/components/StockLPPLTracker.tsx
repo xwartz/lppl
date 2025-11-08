@@ -1,7 +1,10 @@
 import LPPLTrackerBase from "./LPPLTrackerBase"
 import type { KlineData } from "../lib/lppl"
+import { useI18n } from "../lib/i18n"
 
 const StockLPPLTracker: React.FC = () => {
+  const { t } = useI18n()
+
   const fetchSeries = async ({
     days,
     start,
@@ -23,10 +26,10 @@ const StockLPPLTracker: React.FC = () => {
       query.set("rangeDays", String(typeof days === "number" ? days : 200))
     }
     const response = await fetch(`/api/stock/historical?${query.toString()}`)
-    if (!response.ok) throw new Error("获取股票数据失败")
+    if (!response.ok) throw new Error(t("error.stock.fetch"))
     const payload = await response.json()
     if (!payload || !Array.isArray(payload.points))
-      throw new Error("股票历史数据格式异常")
+      throw new Error(t("error.stock.format"))
     return payload.points.map((p: { time: number; close: number }) => ({
       time: p.time,
       close: p.close,
@@ -49,8 +52,8 @@ const StockLPPLTracker: React.FC = () => {
   return (
     <LPPLTrackerBase
       initialSymbol="AAPL"
-      placeholder="例如 AAPL"
-      ariaLabel="手动输入股票代码"
+      placeholder={t("placeholder.stock.symbol")}
+      ariaLabel={t("aria.stock")}
       validateSymbol={validateSymbol}
       fetchSeries={fetchSeries}
       priceFormatter={priceFmt}

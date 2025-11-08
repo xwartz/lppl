@@ -12,6 +12,7 @@ import {
 } from "recharts"
 import { useTheme } from "../lib/theme-context"
 import type { ThemePref } from "../lib/theme-context"
+import { useI18n } from "../lib/i18n"
 
 interface Point {
   date: string
@@ -34,6 +35,7 @@ const PriceChart: React.FC<Props> = ({
   predictedPrice,
 }) => {
   const { theme } = useTheme()
+  const { t } = useI18n()
   const [chartHeight, setChartHeight] = useState<number>(400)
   const [showFullRange, setShowFullRange] = useState<boolean>(false)
 
@@ -200,7 +202,7 @@ const PriceChart: React.FC<Props> = ({
           fontWeight={600}
           textAnchor="middle"
         >
-          ⚠ 临界点
+          {t("chart.critical.point")}
         </text>
         <text
           x={x}
@@ -270,23 +272,22 @@ const PriceChart: React.FC<Props> = ({
         <div className="mb-3 p-3 bg-warning/10 border border-warning/20 rounded-lg flex items-start gap-3">
           <div className="flex-1">
             <p className="text-sm text-warning font-medium mb-1">
-              ⚠️ 临界点偏离较远
+              {t("chart.warning.far")}
             </p>
             <p className="text-xs text-muted">
-              预测临界价格{" "}
-              <span className="font-semibold">
-                {priceFormatter(criticalPointCoord.price)}
-              </span>{" "}
-              与当前价格范围相差较大 （约{" "}
-              {(criticalPointAnalysis.deviationRatio * 100).toFixed(0)}%）。
-              为保持图表可读性，已隐藏完整范围。
+              {t("chart.warning.far.desc", {
+                price: priceFormatter(criticalPointCoord.price),
+                percent: (criticalPointAnalysis.deviationRatio * 100).toFixed(
+                  0
+                ),
+              })}
             </p>
           </div>
           <button
             onClick={() => setShowFullRange(true)}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-warning/20 hover:bg-warning/30 text-warning transition-colors whitespace-nowrap"
           >
-            显示完整范围
+            {t("chart.show.full")}
           </button>
         </div>
       )}
@@ -294,12 +295,12 @@ const PriceChart: React.FC<Props> = ({
       {/* Toggle back to focused view */}
       {showFullRange && criticalPointAnalysis.isFar && (
         <div className="mb-3 p-3 bg-info/10 border border-info/20 rounded-lg flex items-center justify-between">
-          <p className="text-sm text-info">当前显示完整价格范围</p>
+          <p className="text-sm text-info">{t("chart.showing.full")}</p>
           <button
             onClick={() => setShowFullRange(false)}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-info/20 hover:bg-info/30 text-info transition-colors"
           >
-            聚焦历史数据
+            {t("chart.focus.history")}
           </button>
         </div>
       )}
@@ -369,7 +370,7 @@ const PriceChart: React.FC<Props> = ({
             dataKey="actual"
             stroke={actualLineColor}
             strokeWidth={2}
-            name="实际价格"
+            name={t("chart.actual")}
             dot={false}
             activeDot={{ r: 4 }}
             connectNulls={false}
@@ -380,7 +381,7 @@ const PriceChart: React.FC<Props> = ({
             stroke={fittedLineColor}
             strokeWidth={2}
             strokeDasharray="8 4"
-            name="LPPL 拟合"
+            name={t("chart.fitted")}
             dot={renderCriticalDot}
             activeDot={{ r: 4 }}
             connectNulls={true}

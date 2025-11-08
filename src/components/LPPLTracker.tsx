@@ -1,7 +1,9 @@
 import type { KlineData } from "../lib/lppl"
 import LPPLTrackerBase from "./LPPLTrackerBase"
+import { useI18n } from "../lib/i18n"
 
 const LPPLTracker: React.FC = () => {
+  const { t } = useI18n()
   const msPerDay = 24 * 60 * 60 * 1000
 
   const fetchSeries = async ({
@@ -36,7 +38,7 @@ const LPPLTracker: React.FC = () => {
     const response = await fetch(
       `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=1000`
     )
-    if (!response.ok) throw new Error("获取数据失败")
+    if (!response.ok) throw new Error(t("error.fetch"))
     type BinanceKline = [
       number,
       string,
@@ -75,8 +77,8 @@ const LPPLTracker: React.FC = () => {
   return (
     <LPPLTrackerBase
       initialSymbol="BTCUSDT"
-      placeholder="例如 BTCUSDT"
-      ariaLabel="手动输入交易对"
+      placeholder={t("placeholder.crypto.symbol")}
+      ariaLabel={t("aria.crypto")}
       validateSymbol={validateSymbol}
       fetchSeries={fetchSeries}
       priceFormatter={priceFmt}
