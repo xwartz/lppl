@@ -8,7 +8,8 @@ export const en = {
   "meta.title": "LPPL Bubble Tracker - Financial Bubble Warning System",
   "meta.description":
     "LPPL model-based financial bubble tracking tool that monitors bubble risks in cryptocurrency and stock markets in real-time, providing professional market warning analysis.",
-  "meta.keywords": "LPPL, Financial Bubble, Cryptocurrency, Stock Market, Market Warning, Bubble Detection",
+  "meta.keywords":
+    "LPPL, Financial Bubble, Cryptocurrency, Stock Market, Market Warning, Bubble Detection",
 
   // Theme
   "theme.toggle": "Toggle theme",
@@ -58,7 +59,8 @@ export const en = {
   "chart.error": "Load Failed",
   "chart.price.fit": "Price & LPPL Fit Curve",
   "chart.warning.far": "⚠️ Critical Point Deviation",
-  "chart.warning.far.desc": "Predicted critical price {price} deviates significantly from current price range (about {percent}%). Full range hidden for readability.",
+  "chart.warning.far.desc":
+    "Predicted critical price {price} deviates significantly from current price range (about {percent}%). Full range hidden for readability.",
   "chart.show.full": "Show Full Range",
   "chart.showing.full": "Showing Full Price Range",
   "chart.focus.history": "Focus on Historical Data",
@@ -93,7 +95,8 @@ export const en = {
   "error.stock.format": "Invalid stock historical data format",
   "error.unknown": "Unknown error",
   "error.invalid.input": "Please enter a valid asset symbol",
-  "error.invalid.date.range": "Invalid date range: end date must be later than or equal to start date",
+  "error.invalid.date.range":
+    "Invalid date range: end date must be later than or equal to start date",
 
   // Advanced Settings
   "advanced.settings": "Advanced",
@@ -117,7 +120,8 @@ export const en = {
   "risk.high": "High Risk",
   "risk.medium": "Medium Risk",
   "risk.low": "Low Risk",
-  "risk.reason.unreliable": "Unreliable fit (residual too large or numerical anomaly)",
+  "risk.reason.unreliable":
+    "Unreliable fit (residual too large or numerical anomaly)",
   "risk.reason.critical.passed": "Predicted critical date has passed",
   "risk.reason.critical.near": "Critical date approaching (<30 days)",
   "risk.reason.critical.soon": "Critical date within 60 days",
@@ -129,7 +133,7 @@ export const en = {
   "critical.price": "Predicted Critical Price",
   "critical.days.after": "days from now",
   "critical.days.before": "days ago",
-  "critical.today": "today",
+  "critical.today": "within 24 hours",
   "critical.about": "About",
 
   // Model Fit
@@ -147,5 +151,6 @@ export const en = {
 
   // Footer
   "footer.about": "About LPPL",
-  "footer.disclaimer": "⚠️ Disclaimer: LPPL model is for reference only and does not constitute investment advice.",
+  "footer.disclaimer":
+    "⚠️ Disclaimer: LPPL model is for reference only and does not constitute investment advice.",
 }
