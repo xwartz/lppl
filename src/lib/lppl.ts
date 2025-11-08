@@ -807,13 +807,22 @@ export const fitLppl = (
     riskLevel = "low"
     riskReasons.push("拟合不可靠（残差过大或数值异常）")
   } else {
-    if (daysUntilCritical < 30) riskReasons.push("预测临界日临近 (<30 天)")
-    else if (daysUntilCritical < 60) riskReasons.push("预测临界日在 30–60 天内")
+    if (daysUntilCritical < 0) riskReasons.push("预测临界日已过")
+    else if (daysUntilCritical < 30) riskReasons.push("预测临界日临近 (<30 天)")
+    else if (daysUntilCritical < 60) riskReasons.push("预测临界日在 60 天内")
     if (priceAcceleration > 0.1) riskReasons.push("近期价格快速上涨 (>10%)")
     else if (priceAcceleration > 0.05) riskReasons.push("近期价格上涨 (>5%)")
 
-    if (daysUntilCritical < 30 && priceAcceleration > 0.1) riskLevel = "high"
-    else if (daysUntilCritical < 60 || priceAcceleration > 0.05)
+    if (
+      daysUntilCritical > 0 &&
+      daysUntilCritical < 30 &&
+      priceAcceleration > 0.1
+    )
+      riskLevel = "high"
+    else if (
+      (daysUntilCritical > 0 && daysUntilCritical < 60) ||
+      priceAcceleration > 0.05
+    )
       riskLevel = "medium"
     else riskLevel = "low"
   }

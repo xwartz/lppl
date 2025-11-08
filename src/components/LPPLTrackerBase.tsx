@@ -209,9 +209,10 @@ const LPPLTrackerBase: React.FC<Props> = ({
 
   const chartData = priceData.map((d, i) => ({
     date: new Date(d.time).toLocaleDateString(),
-    actual: d.close,
+    actual: d.close as number,
     fitted:
       lpplResult && lpplResult.fitted ? lpplResult.fitted[i] ?? null : null,
+    isCriticalPoint: false,
   }))
 
   const getRiskColor = (level: string) => {
@@ -502,15 +503,21 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   {lpplResult.criticalDate?.toLocaleDateString("zh-CN")}
                 </p>
                 <p className="text-xs text-muted mt-2">
-                  约{" "}
-                  {Math.round(
-                    (lpplResult.criticalDate!.getTime() -
-                      (priceData.length > 0
-                        ? priceData[priceData.length - 1].time
-                        : Date.now())) /
-                      (1000 * 86400)
-                  )}{" "}
-                  天后
+                  {(() => {
+                    const daysFromNow = Math.round(
+                      (lpplResult.criticalDate!.getTime() - Date.now()) /
+                        (1000 * 86400)
+                    )
+                    const absDays = Math.abs(daysFromNow)
+
+                    if (daysFromNow > 0) {
+                      return `约 ${absDays} 天后`
+                    } else if (daysFromNow < 0) {
+                      return `约 ${absDays} 天前`
+                    } else {
+                      return "今天"
+                    }
+                  })()}
                 </p>
                 {lpplResult.predictedPrice &&
                   Number.isFinite(lpplResult.predictedPrice) && (
@@ -546,11 +553,24 @@ const LPPLTrackerBase: React.FC<Props> = ({
             </div>
 
             {/* Chart */}
-            <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-sm">
+            <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-sm relative">
               <h2 className="text-base sm:text-lg font-semibold text-text mb-4">
                 价格与 LPPL 拟合曲线
               </h2>
-              <PriceChart data={chartData} priceFormatter={priceFormatter} />
+              <PriceChart
+                data={chartData}
+                priceFormatter={priceFormatter}
+                criticalDate={lpplResult.criticalDate}
+                predictedPrice={lpplResult.predictedPrice}
+              />
+              {loading && (
+                <div className="absolute inset-0 bg-card/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
+                  <div className="flex items-center gap-3">
+                    <RefreshCw size={18} className="animate-spin text-accent" />
+                    <span className="text-sm text-text">更新中...</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Model Parameters */}
@@ -637,13 +657,22 @@ const LPPLTrackerBase: React.FC<Props> = ({
           </p>
         </div>
 
-        {/* Loading Overlay */}
-        {loading && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
-            <div className="bg-card border border-border-var rounded-xl p-6 flex items-center gap-4 shadow-2xl animate-in scale-in duration-200">
-              <RefreshCw size={20} className="animate-spin text-accent" />
-              <span className="text-sm text-text">正在加载数据...</span>
+        {/* Subtle Loading Bar */}
+        {loading && !lpplResult && (
+          <div className="fixed top-0 left-0 right-0 z-50">
+            <div className="h-1 bg-accent/20 overflow-hidden">
+              <div
+                className="h-full bg-accent animate-pulse"
+                style={{ animation: "loading-slide 1.5s ease-in-out infinite" }}
+              />
             </div>
+            <style>{`
+              @keyframes loading-slide {
+                0% { width: 0%; margin-left: 0%; }
+                50% { width: 50%; margin-left: 25%; }
+                100% { width: 0%; margin-left: 100%; }
+              }
+            `}</style>
           </div>
         )}
       </div>
