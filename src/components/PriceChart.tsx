@@ -277,9 +277,6 @@ const PriceChart: React.FC<Props> = ({
             <p className="text-xs text-muted">
               {t("chart.warning.far.desc", {
                 price: priceFormatter(criticalPointCoord.price),
-                percent: (criticalPointAnalysis.deviationRatio * 100).toFixed(
-                  0
-                ),
               })}
             </p>
           </div>
