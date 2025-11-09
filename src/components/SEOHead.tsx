@@ -18,7 +18,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({ title, description, keywords, path = 
   const metaTitle = title || t("meta.title")
   const metaDescription = description || t("meta.description")
   const metaKeywords = keywords || t("meta.keywords")
-  const defaultImage = `${siteUrl}/lppl-logo.svg`
+  const defaultImage = `${siteUrl}/og-image.png`
   const metaImage = imageUrl || defaultImage
 
   useEffect(() => {
