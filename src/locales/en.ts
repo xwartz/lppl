@@ -60,10 +60,15 @@ export const en = {
   "chart.price.fit": "Price & LPPL Fit Curve",
   "chart.warning.far": "⚠️ Critical Point Deviation",
   "chart.warning.far.desc":
-    "Predicted critical price {price} deviates significantly from current price range (about {percent}%). Full range hidden for readability.",
+    "Predicted critical price {price} deviates significantly from current price range. Full range hidden for readability.",
   "chart.show.full": "Show Full Range",
   "chart.showing.full": "Showing Full Price Range",
   "chart.focus.history": "Focus on Historical Data",
+  "chart.interaction.hint":
+    "Use mouse wheel to zoom, drag to pan, hover for details",
+  "chart.zoom.in": "Zoom In",
+  "chart.zoom.out": "Zoom Out",
+  "chart.reset": "Reset View",
 
   // Parameters
   "params.title": "LPPL Parameters",

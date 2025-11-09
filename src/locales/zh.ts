@@ -59,10 +59,14 @@ export const zh = {
   "chart.price.fit": "价格与 LPPL 拟合曲线",
   "chart.warning.far": "⚠️ 临界点偏离较远",
   "chart.warning.far.desc":
-    "预测临界价格 {price} 与当前价格范围相差较大（约 {percent}%）。为保持图表可读性，已隐藏完整范围。",
+    "预测临界价格 {price} 与当前价格范围相差较大。为保持图表可读性，已隐藏完整范围。",
   "chart.show.full": "显示完整范围",
   "chart.showing.full": "当前显示完整价格范围",
   "chart.focus.history": "聚焦历史数据",
+  "chart.interaction.hint": "使用滚轮缩放，拖拽平移，悬停查看详情",
+  "chart.zoom.in": "放大",
+  "chart.zoom.out": "缩小",
+  "chart.reset": "重置视图",
 
   // Parameters
   "params.title": "LPPL 参数",
