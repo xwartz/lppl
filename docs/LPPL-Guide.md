@@ -41,7 +41,7 @@ LPPL（Log-Periodic Power Law，中文常译为“对数周期幂律”）又称
 - 线性回归完成后再把 $C_1,C_2$ 还原为 $C,\phi$：
 
 ```math
-C = \sqrt{C_1^2 + C_2^2}, \quad \phi = \operatorname{atan2}(-C_2,\, C_1)
+C = \sqrt{C_1^2 + C_2^2}, \quad \phi = \mathrm{atan2}(-C_2,\, C_1)
 ```
 
 - 非线性参数 $t_c,m,\omega$ 通过受约束的随机搜索获得初值，再做小步 LM（Levenberg–Marquardt）细化。
@@ -52,7 +52,7 @@ C = \sqrt{C_1^2 + C_2^2}, \quad \phi = \operatorname{atan2}(-C_2,\, C_1)
 
 ### 4. 约束与过滤器（Filters）
 为避免数值上“看似拟合但经济含义不正确”的解，本项目与 Python 代码一样加入了一组常用约束与过滤器：
-- 参数范围: $m \in [0.1,0.9]$，$\omega \in [6,13]$，$t_c$ 必须晚于样本末尾
+- 参数范围: $m \in [0.1,0.9]$, $\omega \in [6,13]$, $t_c$ 必须晚于样本末尾
 - $B<0$（正向泡沫常见设定）
 - 震荡次数 $O$（outer/inner 窗口内累计的对数周期摆动次数）
 
@@ -95,7 +95,7 @@ Python 版提供 `mp_compute_nested_fits` 来并行扫描窗口。本项目提�
 ### 7. 与 Python `lppls` 的一致项与差异项
 已对齐的关键点：
 - 可分离最小二乘（线性 $A,B,C_1,C_2$ + 非线性 $t_c,m,\omega$）
-- 约束区间与过滤器($B<0$、$O$、$D$)
+- 约束区间与过滤器($B<0$, $O$, $D$)
 - 多起点随机搜索 + 局部细化（随后短步 LM 判断收敛）
 - 嵌套窗口扫描 + 信心指标（同步实现）
 
