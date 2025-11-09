@@ -1,4 +1,4 @@
-## LPPL / JLS 模型通俗指南（含本项目实现细节）
+## LPPL / JLS 模型通俗指南
 
 > 参考与灵感来源：Boulder Investment Technologies 的 Python 实现 `lppls`（MIT License）与相关论文。[项目主页](https://github.com/Boulder-Investment-Technologies/lppls)
 
@@ -29,16 +29,21 @@ LPPL（Log-Periodic Power Law，中文常译为“对数周期幂律”）又称
 
 ### 3. Python 实现与本项目实现的“稳定拟合”思路
 直接用非线性最小二乘同时拟合 7 个参数会很不稳定。Python `lppls` 与本项目采取了“可分离最小二乘”的标准方案：
-- 将 $A,B,C$ 与一个等价的二参数对（$C_1,C_2$）视为线性参数；将 $t_c,m,\omega$ 视为非线性参数。
+- 将 $A,B,C$ 与一个等价的二参数对 ($C_1,C_2$) 视为线性参数；将 $t_c,m,\omega$ 视为非线性参数。
 - 给定 $t_c,m,\omega$ 后，构造线性回归矩阵，直接一次性求出最佳 $A,B,C_1,C_2$：
-  ```math
-  \ln p(t) \approx A \cdot 1 + B \cdot x_m + C_1 \cdot x_m \cos(\omega\ln x) + C_2 \cdot x_m \sin(\omega\ln x)
-  ```
-  其中 $x = t_c - t$、$x_m = x^m$。
+
+```math
+\ln p(t) \approx A \cdot 1 + B \cdot x_m + C_1 \cdot x_m \cos(\omega\ln x) + C_2 \cdot x_m \sin(\omega\ln x)
+```
+
+其中 $x = t_c - t$,$x_m = x^m$。
+
 - 线性回归完成后再把 $C_1,C_2$ 还原为 $C,\phi$：
-  ```math
-  C = \sqrt{C_1^2 + C_2^2}, \quad \phi = \operatorname{atan2}(-C_2,\, C_1)
-  ```
+
+```math
+C = \sqrt{C_1^2 + C_2^2}, \quad \phi = \operatorname{atan2}(-C_2,\, C_1)
+```
+
 - 非线性参数 $t_c,m,\omega$ 通过受约束的随机搜索获得初值，再做小步 LM（Levenberg–Marquardt）细化。
 
 好处：
@@ -47,18 +52,23 @@ LPPL（Log-Periodic Power Law，中文常译为“对数周期幂律”）又称
 
 ### 4. 约束与过滤器（Filters）
 为避免数值上“看似拟合但经济含义不正确”的解，本项目与 Python 代码一样加入了一组常用约束与过滤器：
-- 参数范围：$m \in [0.1,0.9]$，$\omega \in [6,13]$，$t_c$ 必须晚于样本末尾
+- 参数范围: $m \in [0.1,0.9]$，$\omega \in [6,13]$，$t_c$ 必须晚于样本末尾
 - $B<0$（正向泡沫常见设定）
 - 震荡次数 $O$（outer/inner 窗口内累计的对数周期摆动次数）
-  ```math
-  O = \frac{\omega}{2\pi}\ln\frac{t_c - t_{\text{start}}}{t_c - t_{\text{end}}}
-  ```
-  默认要求 $2.5 \le O \le 13$
+
+```math
+O = \frac{\omega}{2\pi}\ln\frac{t_c - t_{\text{start}}}{t_c - t_{\text{end}}}
+```
+
+默认要求 $2.5 \le O \le 13$
+
 - 阻尼指标 $D$（常用的经验型 proxy）
-  ```math
-  D = \frac{m \cdot |B|}{\omega \cdot |C|}
-  ```
-  默认要求 $0.5 \le D \le 1.0$（经验阈值，可根据资产特性调整）
+
+```math
+D = \frac{m \cdot |B|}{\omega \cdot |C|}
+```
+
+默认要求 $0.5 \le D \le 1.0$（经验阈值，可根据资产特性调整）
 
 这些过滤器用于剔除不符合“对数周期泡沫”形态的拟合，从而让结果更可靠。
 
@@ -85,7 +95,7 @@ Python 版提供 `mp_compute_nested_fits` 来并行扫描窗口。本项目提�
 ### 7. 与 Python `lppls` 的一致项与差异项
 已对齐的关键点：
 - 可分离最小二乘（线性 $A,B,C_1,C_2$ + 非线性 $t_c,m,\omega$）
-- 约束区间与过滤器（$B<0$、$O$、$D$）
+- 约束区间与过滤器($B<0$、$O$、$D$)
 - 多起点随机搜索 + 局部细化（随后短步 LM 判断收敛）
 - 嵌套窗口扫描 + 信心指标（同步实现）
 
@@ -121,7 +131,7 @@ const scan = lpplScanConfidence(series, {
 ### 9. 结果如何解读？
 - “拟合优度”（RMSE）越小越好，但要结合过滤器是否通过。
 - “临界日”不是水晶球；它表示一个高风险窗口的中心。可结合“信心指标”判断信号稳健性。
-- 当多个外层窗口（不同跨度）都给出较高的 confidence，且 $m,\omega$ 处于经验稳定区间、$B<0$，则“处于泡沫末期”的可能性更高。
+- 当多个外层窗口（不同跨度）都给出较高的 confidence，且 $m,\omega$ 处于经验稳定区间 $B<0$，则“处于泡沫末期”的可能性更高。
 
 ### 10. 常见问题
 - 为什么有时会“未收敛”？
