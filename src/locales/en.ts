@@ -3,6 +3,7 @@ export const en = {
   "app.title": "LPPL Bubble Tracker",
   "nav.crypto": "Cryptocurrency",
   "nav.stocks": "Stock Market",
+  "nav.commodities": "Commodities",
 
   // SEO & Meta
   "meta.title": "LPPL Bubble Tracker - Financial Bubble Warning System",

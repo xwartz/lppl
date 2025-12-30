@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom"
 import CryptoLPPLPage from "./pages/CryptoLPPLPage"
 import StockLPPLPage from "./pages/StockLPPLPage"
+import CommodityLPPLPage from "./pages/CommodityLPPLPage"
 import ThemeToggle from "./components/ThemeToggle"
 import LanguageToggle from "./components/LanguageToggle"
 import { Bitcoin, TrendingUp } from "lucide-react"
@@ -51,6 +52,19 @@ function App() {
                     <TrendingUp size={14} />
                     <span>{t("nav.stocks")}</span>
                   </NavLink>
+                  <NavLink
+                    to="/commodities"
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-card shadow-sm text-text"
+                          : "text-muted hover:text-text"
+                      }`
+                    }
+                  >
+                    <TrendingUp size={14} />
+                    <span>{t("nav.commodities")}</span>
+                  </NavLink>
                 </nav>
               </div>
 
@@ -97,6 +111,7 @@ function App() {
           <Routes>
             <Route path="/" element={<CryptoLPPLPage />} />
             <Route path="/stocks" element={<StockLPPLPage />} />
+            <Route path="/commodities" element={<CommodityLPPLPage />} />
           </Routes>
         </main>
       </div>
