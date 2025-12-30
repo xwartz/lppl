@@ -1,8 +1,9 @@
+import React from "react"
 import LPPLTrackerBase from "./LPPLTrackerBase"
 import type { KlineData } from "../lib/lppl"
 import { useI18n } from "../lib/i18n"
 
-const StockLPPLTracker: React.FC = () => {
+const CommodityLPPLTracker: React.FC = () => {
   const { t } = useI18n()
 
   const fetchSeries = async ({
@@ -36,12 +37,9 @@ const StockLPPLTracker: React.FC = () => {
     }))
   }
 
-  // Support various stock market formats:
-  // US: AAPL, MSFT, BRK.A, BRK-B
-  // Hong Kong: 0700.HK, 9988.HK
-  // China A-shares: 000001.SZ, 600000.SS
-  // Taiwan: 2330.TW
-  const validateSymbol = (s: string) => /^[A-Z0-9][A-Z0-9.-]{0,19}$/i.test(s)
+  // Allow '=' for futures like GC=F
+  const validateSymbol = (s: string) => /^[A-Z0-9=][A-Z0-9=.-]{0,19}$/i.test(s)
+
   const priceFmt = (value: number) => {
     try {
       return new Intl.NumberFormat("en-US", {
@@ -54,25 +52,24 @@ const StockLPPLTracker: React.FC = () => {
     }
   }
 
+  const defaultCommodities = [
+    { label: "Gold", value: "GC=F" },
+    { label: "Silver", value: "SI=F" },
+    { label: "Crude Oil", value: "CL=F" },
+  ]
+
   return (
     <LPPLTrackerBase
-      initialSymbol="AAPL"
-      placeholder={t("placeholder.stock.symbol")}
-      ariaLabel={t("aria.stock")}
+      initialSymbol="GC=F"
+      placeholder="Commodity (e.g. GC=F)"
+      ariaLabel="Commodities"
       validateSymbol={validateSymbol}
       fetchSeries={fetchSeries}
       priceFormatter={priceFmt}
       daysOptions={[50, 100, 200, 365, 730]}
-      suggestedSymbols={[
-        { label: "Apple", value: "AAPL" },
-        { label: "Microsoft", value: "MSFT" },
-        { label: "NVIDIA", value: "NVDA" },
-        { label: "Tesla", value: "TSLA" },
-        { label: "Google", value: "GOOGL" },
-        { label: "Meta", value: "META" },
-      ]}
+      suggestedSymbols={defaultCommodities}
     />
   )
 }
 
-export default StockLPPLTracker
+export default CommodityLPPLTracker

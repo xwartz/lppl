@@ -3,6 +3,7 @@ export const zh = {
   "app.title": "LPPL 泡沫追踪器",
   "nav.crypto": "数字货币",
   "nav.stocks": "股票市场",
+  "nav.commodities": "大宗商品",
 
   // SEO & Meta
   "meta.title": "LPPL 泡沫追踪器 - 金融泡沫预警系统",

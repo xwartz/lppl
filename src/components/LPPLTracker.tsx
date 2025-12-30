@@ -83,6 +83,13 @@ const LPPLTracker: React.FC = () => {
       fetchSeries={fetchSeries}
       priceFormatter={priceFmt}
       daysOptions={[20, 50, 100, 200, 365]}
+      suggestedSymbols={[
+        { label: "Bitcoin", value: "BTCUSDT" },
+        { label: "Ethereum", value: "ETHUSDT" },
+        { label: "BNB", value: "BNBUSDT" },
+        { label: "Solana", value: "SOLUSDT" },
+        { label: "XRP", value: "XRPUSDT" },
+      ]}
     />
   )
 }

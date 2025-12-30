@@ -21,6 +21,7 @@ type Props = {
   fetchSeries: (args: FetchArgs) => Promise<KlineData[]>
   priceFormatter: (v: number) => string
   daysOptions: number[]
+  suggestedSymbols?: Array<{ label: string; value: string }>
 }
 
 const LPPLTrackerBase: React.FC<Props> = ({
@@ -31,6 +32,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
   fetchSeries,
   priceFormatter,
   daysOptions,
+  suggestedSymbols,
 }) => {
   const { t, language } = useI18n()
   const msPerDay = 24 * 60 * 60 * 1000
@@ -251,17 +253,48 @@ const LPPLTrackerBase: React.FC<Props> = ({
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Left: Symbol + Time Range */}
               <div className="flex flex-wrap items-center gap-2 flex-1">
-                <input
-                  aria-label={ariaLabel}
-                  placeholder={placeholder}
-                  value={customSymbolInput}
-                  onChange={(e) => setCustomSymbolInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") applyCustomSymbol()
-                  }}
-                  onBlur={applyCustomSymbol}
-                  className="w-32 h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all font-mono uppercase placeholder:text-muted"
-                />
+                <div className="relative group">
+                  <input
+                    aria-label={ariaLabel}
+                    placeholder={placeholder}
+                    value={customSymbolInput}
+                    onChange={(e) => setCustomSymbolInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") applyCustomSymbol()
+                    }}
+                    onBlur={applyCustomSymbol}
+                    className="w-32 h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all font-mono uppercase placeholder:text-muted"
+                  />
+                  {suggestedSymbols && suggestedSymbols.length > 0 && (
+                    <div className="absolute top-12 left-0 z-50 w-[300px] bg-card border border-border-var rounded-lg shadow-xl p-3 hidden group-focus-within:block hover:block">
+                      <div className="flex items-center justify-between mb-2 px-1">
+                        <span className="text-xs font-medium text-muted">
+                          {t("stock.suggestions") || "Popular Assets"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {suggestedSymbols.map((item) => (
+                          <button
+                            key={item.value}
+                            onMouseDown={(e) => {
+                              e.preventDefault()
+                              urlState.setSymbol(item.value)
+                            }}
+                            className="px-2 py-1.5 text-xs rounded-md bg-panel hover:bg-accent/10 border border-border-var hover:border-accent transition-colors text-text text-left flex flex-col items-start overflow-hidden"
+                            title={`${item.label} (${item.value})`}
+                          >
+                            <span className="font-semibold truncate w-full">
+                              {item.label}
+                            </span>
+                            <span className="text-[10px] text-muted opacity-80 truncate w-full">
+                              {item.value}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <label className="flex items-center gap-2 text-sm text-text cursor-pointer select-none">
                   <input
