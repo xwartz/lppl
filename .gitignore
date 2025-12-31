@@ -25,3 +25,4 @@ dist-ssr
 .vercel
 .pnpm-store
 .superdesign
+*.env
