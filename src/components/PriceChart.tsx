@@ -329,7 +329,7 @@ const PriceChart: React.FC<Props> = ({
               fontWeight: 600,
             }}
             itemStyle={{ fontSize: "12px" }}
-            formatter={(value: number | string | (string | number)[]) => {
+            formatter={(value: number | string | (string | number)[] | undefined) => {
               if (value === null || value === undefined) return "—"
               if (Array.isArray(value)) return value.join(", ")
               return typeof value === "number" ? priceFormatter(value) : value
