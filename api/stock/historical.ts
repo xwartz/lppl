@@ -1,8 +1,10 @@
 /*
-  Vercel Serverless Function: Stock historical data proxy using yahoo-finance2
+  Vercel Serverless Function: Stock historical data proxy
+  - Primary: yahoo-finance2
+  - Fallback: Alpha Vantage (free tier: 25 requests/day)
   - Avoids browser CORS by fetching on the server
   - Returns a minimal series compatible with KlineData: { time, close }
-  - Implements caching to avoid rate limits
+  - Implements long-term caching to avoid rate limits
 */
 
 import type { IncomingMessage, ServerResponse } from "http"
@@ -14,7 +16,7 @@ interface HistoricalDataResponse {
   points: Array<{ time: number; close: number }>
 }
 
-// Simple in-memory cache with TTL
+// Simple in-memory cache with LONG TTL to survive rate limits
 const cache = new Map<string, { data: HistoricalDataResponse; expires: number }>()
 
 // Lazy import to be safe across ESM/CJS bundling environments
@@ -22,6 +24,46 @@ async function getYahooFinance() {
   const mod = await import("yahoo-finance2")
   // yahoo-finance2 exports the yahooFinance instance as default
   return mod.default
+}
+
+// Fallback to Alpha Vantage API (requires API key in env)
+async function fetchFromAlphaVantage(
+  symbol: string,
+  interval: string
+): Promise<Array<{ date: Date; close: number }>> {
+  const apiKey = process.env.ALPHA_VANTAGE_API_KEY || "demo"
+
+  // Map intervals
+  const functionMap: Record<string, string> = {
+    "1d": "TIME_SERIES_DAILY",
+    "1wk": "TIME_SERIES_WEEKLY",
+    "1mo": "TIME_SERIES_MONTHLY"
+  }
+
+  const func = functionMap[interval] || "TIME_SERIES_DAILY"
+  const url = `https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${apiKey}&outputsize=full`
+
+  const response = await fetch(url)
+  const data: unknown = await response.json()
+
+  // Type guard for Alpha Vantage response
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid Alpha Vantage response")
+  }
+
+  // Parse response
+  const dataObj = data as Record<string, unknown>
+  const timeSeriesKey = Object.keys(dataObj).find(key => key.includes("Time Series"))
+
+  if (!timeSeriesKey || !dataObj[timeSeriesKey]) {
+    throw new Error("Invalid Alpha Vantage response format")
+  }
+
+  const timeSeries = dataObj[timeSeriesKey] as Record<string, Record<string, string>>
+  return Object.entries(timeSeries).map(([date, values]) => ({
+    date: new Date(date),
+    close: parseFloat(values["4. close"])
+  }))
 }
 
 function getCachedData(key: string): HistoricalDataResponse | null {
@@ -38,9 +80,9 @@ function getCachedData(key: string): HistoricalDataResponse | null {
 function setCachedData(
   key: string,
   data: HistoricalDataResponse,
-  ttlSeconds = 300
+  ttlSeconds = 3600 // Increased to 1 hour default
 ): void {
-  // Cache for 5 minutes by default
+  // Cache with longer TTL to survive rate limits
   const expires = Date.now() + ttlSeconds * 1000
   cache.set(key, { data, expires })
 
@@ -151,10 +193,11 @@ export default async function handler(req: Req, res: Res) {
 
     const yf = await getYahooFinance()
 
-    // Add retry logic with exponential backoff
+    // Add retry logic with exponential backoff and fallback
     let retries = 0
     const maxRetries = 2
     let results: Array<{ date: Date; close: number }> = []
+    let usedFallback = false
 
     while (retries <= maxRetries) {
       try {
@@ -166,16 +209,27 @@ export default async function handler(req: Req, res: Res) {
         })
         break // Success, exit retry loop
       } catch (error: unknown) {
-        if (retries === maxRetries) {
-          throw error // Re-throw if we've exhausted retries
-        }
-
-        // Check if it's a rate limit error
         const errorMessage =
           error instanceof Error ? error.message : String(error)
         const isRateLimit =
           errorMessage.includes("Too Many Requests") ||
-          errorMessage.includes("429")
+          errorMessage.includes("429") ||
+          errorMessage.includes("rate limit")
+
+        // If all retries exhausted, try Alpha Vantage as fallback
+        if (retries === maxRetries) {
+          console.log(
+            `Yahoo Finance failed, trying Alpha Vantage fallback for ${symbol}`
+          )
+          try {
+            results = await fetchFromAlphaVantage(symbol, interval)
+            usedFallback = true
+            break
+          } catch (fallbackError) {
+            console.error("Alpha Vantage fallback also failed:", fallbackError)
+            throw error // Throw original Yahoo error
+          }
+        }
 
         if (isRateLimit) {
           // Wait before retrying (exponential backoff)
@@ -198,14 +252,15 @@ export default async function handler(req: Req, res: Res) {
 
     const responseData = { symbol, interval, points: series }
 
-    // Cache the successful response
-    setCachedData(cacheKey, responseData, 300) // 5 minutes TTL
+    // Cache the successful response with longer TTL (1 hour)
+    setCachedData(cacheKey, responseData, 3600)
 
     res.setHeader("Content-Type", "application/json; charset=utf-8")
     res.setHeader("X-Cache", "MISS")
+    res.setHeader("X-Data-Source", usedFallback ? "alphavantage" : "yahoo")
     res.setHeader(
       "Cache-Control",
-      "public, s-maxage=300, stale-while-revalidate=600"
+      "public, s-maxage=3600, stale-while-revalidate=7200"
     )
     res.statusCode = 200
     res.end(JSON.stringify(responseData))
