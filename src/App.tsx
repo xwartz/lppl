@@ -5,6 +5,7 @@ import CommodityLPPLPage from "./pages/CommodityLPPLPage"
 import ThemeToggle from "./components/ThemeToggle"
 import LanguageToggle from "./components/LanguageToggle"
 import { Bitcoin, TrendingUp } from "lucide-react"
+import { CommodityIcon } from "./components/icons/CommodityIcon"
 import { useI18n } from "./lib/i18n"
 
 function App() {
@@ -62,7 +63,7 @@ function App() {
                       }`
                     }
                   >
-                    <TrendingUp size={14} />
+                    <CommodityIcon size={14} />
                     <span>{t("nav.commodities")}</span>
                   </NavLink>
                 </nav>
@@ -96,6 +97,18 @@ function App() {
                     }
                   >
                     <TrendingUp size={16} />
+                  </NavLink>
+                  <NavLink
+                    to="/commodities"
+                    className={({ isActive }) =>
+                      `flex items-center justify-center w-9 h-9 rounded-md transition-all ${
+                        isActive
+                          ? "bg-card shadow-sm text-text"
+                          : "text-muted hover:text-text"
+                      }`
+                    }
+                  >
+                    <CommodityIcon size={16} />
                   </NavLink>
                 </nav>
 
