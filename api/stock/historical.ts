@@ -21,9 +21,10 @@ const cache = new Map<string, { data: HistoricalDataResponse; expires: number }>
 
 // Lazy import to be safe across ESM/CJS bundling environments
 async function getYahooFinance() {
-  const mod = await import("yahoo-finance2")
-  // yahoo-finance2 exports the yahooFinance instance as default
-  return mod.default
+  const { default: YahooFinance } = await import("yahoo-finance2")
+  // yahoo-finance2 v3 requires instantiation
+  const yahooFinance = new YahooFinance()
+  return yahooFinance
 }
 
 // Fallback to Alpha Vantage API (requires API key in env)
@@ -37,7 +38,7 @@ async function fetchFromAlphaVantage(
   const functionMap: Record<string, string> = {
     "1d": "TIME_SERIES_DAILY",
     "1wk": "TIME_SERIES_WEEKLY",
-    "1mo": "TIME_SERIES_MONTHLY"
+    "1mo": "TIME_SERIES_MONTHLY",
   }
 
   const func = functionMap[interval] || "TIME_SERIES_DAILY"
@@ -53,16 +54,21 @@ async function fetchFromAlphaVantage(
 
   // Parse response
   const dataObj = data as Record<string, unknown>
-  const timeSeriesKey = Object.keys(dataObj).find(key => key.includes("Time Series"))
+  const timeSeriesKey = Object.keys(dataObj).find((key) =>
+    key.includes("Time Series")
+  )
 
   if (!timeSeriesKey || !dataObj[timeSeriesKey]) {
     throw new Error("Invalid Alpha Vantage response format")
   }
 
-  const timeSeries = dataObj[timeSeriesKey] as Record<string, Record<string, string>>
+  const timeSeries = dataObj[timeSeriesKey] as Record<
+    string,
+    Record<string, string>
+  >
   return Object.entries(timeSeries).map(([date, values]) => ({
     date: new Date(date),
-    close: parseFloat(values["4. close"])
+    close: parseFloat(values["4. close"]),
   }))
 }
 
@@ -202,10 +208,16 @@ export default async function handler(req: Req, res: Res) {
     while (retries <= maxRetries) {
       try {
         // yahoo-finance2 historical supports Date objects
+        // Cast interval to valid yahoo-finance2 types
+        const validInterval =
+          interval === "1d" || interval === "1wk" || interval === "1mo"
+            ? interval
+            : "1d"
+
         results = await yf.historical(symbol, {
           period1,
           period2,
-          interval,
+          interval: validInterval,
         })
         break // Success, exit retry loop
       } catch (error: unknown) {
