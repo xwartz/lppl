@@ -72,6 +72,46 @@ async function fetchFromAlphaVantage(
   }))
 }
 
+// Fallback to Twelve Data API (free tier: 800 requests/day)
+async function fetchFromTwelveData(
+  symbol: string,
+  interval: string
+): Promise<Array<{ date: Date; close: number }>> {
+  const apiKey = process.env.TWELVE_DATA_API_KEY
+
+  if (!apiKey) {
+    throw new Error("TWELVE_DATA_API_KEY not configured")
+  }
+
+  // Map intervals
+  const intervalMap: Record<string, string> = {
+    "1d": "1day",
+    "1wk": "1week",
+    "1mo": "1month",
+  }
+
+  const tdInterval = intervalMap[interval] || "1day"
+  const url = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=${tdInterval}&apikey=${apiKey}&outputsize=5000`
+
+  const response = await fetch(url)
+  const data: unknown = await response.json()
+
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid Twelve Data response")
+  }
+
+  const dataObj = data as Record<string, unknown>
+
+  if (!dataObj.values || !Array.isArray(dataObj.values)) {
+    throw new Error("Invalid Twelve Data response format")
+  }
+
+  return (dataObj.values as Array<Record<string, string>>).map((item) => ({
+    date: new Date(item.datetime),
+    close: parseFloat(item.close),
+  }))
+}
+
 function getCachedData(key: string): HistoricalDataResponse | null {
   const cached = cache.get(key)
   if (cached && cached.expires > Date.now()) {
@@ -199,13 +239,15 @@ export default async function handler(req: Req, res: Res) {
 
     const yf = await getYahooFinance()
 
-    // Add retry logic with exponential backoff and fallback
+    // Try multiple data sources with fallback
     let retries = 0
-    const maxRetries = 2
+    const maxRetries = 1 // Reduce retries, fail fast to fallback
     let results: Array<{ date: Date; close: number }> = []
-    let usedFallback = false
+    let dataSource = "yahoo"
 
-    while (retries <= maxRetries) {
+    // Try Yahoo Finance first (with quick retry)
+    let yahooFailed = false
+    while (retries <= maxRetries && !yahooFailed) {
       try {
         // yahoo-finance2 historical supports Date objects
         // Cast interval to valid yahoo-finance2 types
@@ -228,28 +270,45 @@ export default async function handler(req: Req, res: Res) {
           errorMessage.includes("429") ||
           errorMessage.includes("rate limit")
 
-        // If all retries exhausted, try Alpha Vantage as fallback
-        if (retries === maxRetries) {
-          console.log(
-            `Yahoo Finance failed, trying Alpha Vantage fallback for ${symbol}`
-          )
-          try {
-            results = await fetchFromAlphaVantage(symbol, interval)
-            usedFallback = true
-            break
-          } catch (fallbackError) {
-            console.error("Alpha Vantage fallback also failed:", fallbackError)
-            throw error // Throw original Yahoo error
-          }
-        }
+        yahooFailed = true
+        console.log(`Yahoo Finance failed for ${symbol}: ${errorMessage}`)
 
-        if (isRateLimit) {
-          // Wait before retrying (exponential backoff)
-          const waitTime = Math.min(1000 * Math.pow(2, retries), 5000)
+        if (isRateLimit && retries < maxRetries) {
+          // Quick retry once
+          const waitTime = 1000
           await new Promise((resolve) => setTimeout(resolve, waitTime))
           retries++
-        } else {
-          throw error // Not a rate limit error, don't retry
+          yahooFailed = false // Give it one more try
+        }
+      }
+    }
+
+    // If Yahoo failed, try fallback sources
+    if (yahooFailed && results.length === 0) {
+      console.log(`Trying fallback sources for ${symbol}`)
+
+      // Try Twelve Data first (higher rate limit)
+      if (process.env.TWELVE_DATA_API_KEY) {
+        try {
+          console.log(`Trying Twelve Data for ${symbol}`)
+          results = await fetchFromTwelveData(symbol, interval)
+          dataSource = "twelvedata"
+        } catch (error) {
+          console.error("Twelve Data failed:", error)
+        }
+      }
+
+      // If still no results, try Alpha Vantage
+      if (results.length === 0) {
+        try {
+          console.log(`Trying Alpha Vantage for ${symbol}`)
+          results = await fetchFromAlphaVantage(symbol, interval)
+          dataSource = "alphavantage"
+        } catch (fallbackError) {
+          console.error("Alpha Vantage also failed:", fallbackError)
+          throw new Error(
+            "All data sources failed. Please try again later or configure TWELVE_DATA_API_KEY."
+          )
         }
       }
     }
@@ -269,7 +328,7 @@ export default async function handler(req: Req, res: Res) {
 
     res.setHeader("Content-Type", "application/json; charset=utf-8")
     res.setHeader("X-Cache", "MISS")
-    res.setHeader("X-Data-Source", usedFallback ? "alphavantage" : "yahoo")
+    res.setHeader("X-Data-Source", dataSource)
     res.setHeader(
       "Cache-Control",
       "public, s-maxage=3600, stale-while-revalidate=7200"
