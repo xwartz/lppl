@@ -25,7 +25,7 @@ importers:
         version: 3.7.0(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react-is@19.2.0)(react@19.2.3)(redux@5.0.1)
       yahoo-finance2:
         specifier: ^3.11.2
-        version: 3.11.2
+        version: 3.13.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.2
@@ -1601,8 +1601,8 @@ packages:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
 
-  yahoo-finance2@3.11.2:
-    resolution: {integrity: sha512-SIvMXjrOktBRD8m+qXAGCK+vR1vwBKuMgCnvmbxv29+t6LTDu0vAUxNYfbigsMRTmBzS4F9TQwbYF90g3Om4HA==}
+  yahoo-finance2@3.13.0:
+    resolution: {integrity: sha512-czBj2q/MD68YEsB7aXNnGhJvWxYZn01O5r/i7VYiQV2m2sWwhca6tKgjwf/LT7zHHEVxhKNiGLB46glLnmq9Ag==}
     engines: {node: '>=20.0.0'}
     hasBin: true
 
@@ -3002,7 +3002,7 @@ snapshots:
 
   word-wrap@1.2.5: {}
 
-  yahoo-finance2@3.11.2:
+  yahoo-finance2@3.13.0:
     dependencies:
       '@deno/shim-deno': 0.18.2
       fetch-mock-cache: 2.3.1
