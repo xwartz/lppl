@@ -1,6 +1,6 @@
-import React from "react"
-import LPPLTracker from "../components/LPPLTracker"
-import SEOHead from "../components/SEOHead"
+import type React from 'react'
+import LPPLTracker from '../components/LPPLTracker'
+import SEOHead from '../components/SEOHead'
 
 const CryptoLPPLPage: React.FC = () => {
   return (
@@ -12,5 +12,3 @@ const CryptoLPPLPage: React.FC = () => {
 }
 
 export default CryptoLPPLPage
-
-

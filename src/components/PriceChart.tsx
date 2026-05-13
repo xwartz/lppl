@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState } from 'react'
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts"
-import { useTheme } from "../lib/theme-context"
-import type { ThemePref } from "../lib/theme-context"
-import { useI18n } from "../lib/i18n"
+} from 'recharts'
+import { useI18n } from '../lib/i18n'
+import type { ThemePref } from '../lib/theme-context'
+import { useTheme } from '../lib/theme-context'
 
 interface Point {
   date: string
@@ -28,12 +28,7 @@ interface Props {
   predictedPrice?: number | null
 }
 
-const PriceChart: React.FC<Props> = ({
-  data,
-  priceFormatter,
-  criticalDate,
-  predictedPrice,
-}) => {
+const PriceChart: React.FC<Props> = ({ data, priceFormatter, criticalDate, predictedPrice }) => {
   const { theme } = useTheme()
   const { t } = useI18n()
   const [chartHeight, setChartHeight] = useState<number>(400)
@@ -43,9 +38,7 @@ const PriceChart: React.FC<Props> = ({
   const priceRange = React.useMemo(() => {
     const prices = data
       .flatMap((d) => [d.actual, d.fitted])
-      .filter(
-        (p): p is number => p !== null && p !== undefined && Number.isFinite(p)
-      )
+      .filter((p): p is number => p !== null && p !== undefined && Number.isFinite(p))
 
     if (prices.length === 0) return { min: 0, max: 0, range: 0 }
 
@@ -58,11 +51,7 @@ const PriceChart: React.FC<Props> = ({
 
   // Check if critical point is far from historical range
   const criticalPointAnalysis = React.useMemo(() => {
-    if (
-      !predictedPrice ||
-      !Number.isFinite(predictedPrice) ||
-      priceRange.range === 0
-    ) {
+    if (!predictedPrice || !Number.isFinite(predictedPrice) || priceRange.range === 0) {
       return {
         isFar: false,
         deviation: 0,
@@ -142,53 +131,48 @@ const PriceChart: React.FC<Props> = ({
   // Responsive chart height
   useEffect(() => {
     const calc = () => {
-      if (typeof window === "undefined") return
+      if (typeof window === 'undefined') return
       const w = window.innerWidth
       setChartHeight(w < 640 ? 280 : 400)
     }
     calc()
-    window.addEventListener("resize", calc)
-    return () => window.removeEventListener("resize", calc)
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
   }, [])
 
   // Detect system dark mode when theme is 'system'
   const systemDark =
-    typeof window !== "undefined" &&
+    typeof window !== 'undefined' &&
     window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
+    window.matchMedia('(prefers-color-scheme: dark)').matches
   const isDark =
-    theme === ("dark" as ThemePref) ||
-    (theme === ("system" as ThemePref) && systemDark)
+    theme === ('dark' as ThemePref) || (theme === ('system' as ThemePref) && systemDark)
 
   // Chart colors based on theme
-  const gridStroke = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"
-  const axisColor = isDark ? "#737373" : "#737373"
-  const actualLineColor = isDark ? "#06b6d4" : "#0284c7"
-  const fittedLineColor = isDark ? "#fafafa" : "#171717"
-  const criticalColor = isDark ? "#f59e0b" : "#d97706"
+  const gridStroke = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+  const axisColor = isDark ? '#737373' : '#737373'
+  const actualLineColor = isDark ? '#06b6d4' : '#0284c7'
+  const fittedLineColor = isDark ? '#fafafa' : '#171717'
+  const criticalColor = isDark ? '#f59e0b' : '#d97706'
 
   const tooltipStyle = isDark
     ? {
-        backgroundColor: "#171717",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: "8px",
-        color: "#ffffff",
-        padding: "12px",
+        backgroundColor: '#171717',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '8px',
+        color: '#ffffff',
+        padding: '12px',
       }
     : {
-        backgroundColor: "#ffffff",
-        border: "1px solid rgba(0,0,0,0.08)",
-        borderRadius: "8px",
-        color: "#000000",
-        padding: "12px",
+        backgroundColor: '#ffffff',
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: '8px',
+        color: '#000000',
+        padding: '12px',
       }
 
   // Custom label for critical point
-  const CriticalLabel = ({
-    viewBox,
-  }: {
-    viewBox?: { x?: number; y?: number }
-  }) => {
+  const CriticalLabel = ({ viewBox }: { viewBox?: { x?: number; y?: number } }) => {
     const x = viewBox?.x ?? 0
     const y = viewBox?.y ?? 0
 
@@ -202,27 +186,13 @@ const PriceChart: React.FC<Props> = ({
           fontWeight={600}
           textAnchor="middle"
         >
-          {t("chart.critical.point")}
+          {t('chart.critical.point')}
         </text>
-        <text
-          x={x}
-          y={y + 24}
-          fill={axisColor}
-          fontSize={10}
-          textAnchor="middle"
-        >
-          {criticalDateStr ?? ""}
+        <text x={x} y={y + 24} fill={axisColor} fontSize={10} textAnchor="middle">
+          {criticalDateStr ?? ''}
         </text>
-        <text
-          x={x}
-          y={y + 38}
-          fill={axisColor}
-          fontSize={10}
-          textAnchor="middle"
-        >
-          {predictedPrice && Number.isFinite(predictedPrice)
-            ? priceFormatter(predictedPrice)
-            : ""}
+        <text x={x} y={y + 38} fill={axisColor} fontSize={10} textAnchor="middle">
+          {predictedPrice && Number.isFinite(predictedPrice) ? priceFormatter(predictedPrice) : ''}
         </text>
       </g>
     )
@@ -250,7 +220,7 @@ const PriceChart: React.FC<Props> = ({
           fill={criticalColor}
           fillOpacity={0.2}
           className="animate-ping"
-          style={{ animationDuration: "2s" }}
+          style={{ animationDuration: '2s' }}
         />
         {/* Main dot */}
         <circle
@@ -258,7 +228,7 @@ const PriceChart: React.FC<Props> = ({
           cy={cy}
           r={6}
           fill={criticalColor}
-          stroke={isDark ? "#000" : "#fff"}
+          stroke={isDark ? '#000' : '#fff'}
           strokeWidth={2}
         />
       </g>
@@ -271,11 +241,9 @@ const PriceChart: React.FC<Props> = ({
       {criticalPointAnalysis.isFar && !showFullRange && criticalPointCoord && (
         <div className="mb-3 p-3 bg-warning/10 border border-warning/20 rounded-lg flex items-start gap-3">
           <div className="flex-1">
-            <p className="text-sm text-warning font-medium mb-1">
-              {t("chart.warning.far")}
-            </p>
+            <p className="text-sm text-warning font-medium mb-1">{t('chart.warning.far')}</p>
             <p className="text-xs text-muted">
-              {t("chart.warning.far.desc", {
+              {t('chart.warning.far.desc', {
                 price: priceFormatter(criticalPointCoord.price),
               })}
             </p>
@@ -284,7 +252,7 @@ const PriceChart: React.FC<Props> = ({
             onClick={() => setShowFullRange(true)}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-warning/20 hover:bg-warning/30 text-warning transition-colors whitespace-nowrap"
           >
-            {t("chart.show.full")}
+            {t('chart.show.full')}
           </button>
         </div>
       )}
@@ -292,21 +260,18 @@ const PriceChart: React.FC<Props> = ({
       {/* Toggle back to focused view */}
       {showFullRange && criticalPointAnalysis.isFar && (
         <div className="mb-3 p-3 bg-info/10 border border-info/20 rounded-lg flex items-center justify-between">
-          <p className="text-sm text-info">{t("chart.showing.full")}</p>
+          <p className="text-sm text-info">{t('chart.showing.full')}</p>
           <button
             onClick={() => setShowFullRange(false)}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-info/20 hover:bg-info/30 text-info transition-colors"
           >
-            {t("chart.focus.history")}
+            {t('chart.focus.history')}
           </button>
         </div>
       )}
 
       <ResponsiveContainer width="100%" height={chartHeight}>
-        <LineChart
-          data={extendedData}
-          margin={{ top: 8, right: 8, bottom: 8, left: 0 }}
-        >
+        <LineChart data={extendedData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
           <CartesianGrid strokeDasharray="4 4" stroke={gridStroke} />
           <XAxis
             dataKey="date"
@@ -318,27 +283,24 @@ const PriceChart: React.FC<Props> = ({
             stroke={axisColor}
             tick={{ fontSize: 12, fill: axisColor }}
             tickLine={{ stroke: gridStroke }}
-            domain={["dataMin", "dataMax"]}
+            domain={['dataMin', 'dataMax']}
             tickFormatter={(v: number) => priceFormatter(v)}
           />
           <Tooltip
             contentStyle={tooltipStyle}
             labelStyle={{
-              fontSize: "12px",
-              marginBottom: "8px",
+              fontSize: '12px',
+              marginBottom: '8px',
               fontWeight: 600,
             }}
-            itemStyle={{ fontSize: "12px" }}
-            formatter={(value: number | string | (string | number)[] | undefined) => {
-              if (value === null || value === undefined) return "—"
-              if (Array.isArray(value)) return value.join(", ")
-              return typeof value === "number" ? priceFormatter(value) : value
+            itemStyle={{ fontSize: '12px' }}
+            formatter={(value: number | string | readonly (string | number)[] | undefined) => {
+              if (value === null || value === undefined) return '—'
+              if (Array.isArray(value)) return value.join(', ')
+              return typeof value === 'number' ? priceFormatter(value) : value
             }}
           />
-          <Legend
-            wrapperStyle={{ fontSize: "14px", paddingTop: "16px" }}
-            iconType="line"
-          />
+          <Legend wrapperStyle={{ fontSize: '14px', paddingTop: '16px' }} iconType="line" />
 
           {/* Critical Date Vertical Line - only show if in view */}
           {criticalDateStr && criticalPointAnalysis.shouldExtend && (
@@ -367,7 +329,7 @@ const PriceChart: React.FC<Props> = ({
             dataKey="actual"
             stroke={actualLineColor}
             strokeWidth={2}
-            name={t("chart.actual")}
+            name={t('chart.actual')}
             dot={false}
             activeDot={{ r: 4 }}
             connectNulls={false}
@@ -378,7 +340,7 @@ const PriceChart: React.FC<Props> = ({
             stroke={fittedLineColor}
             strokeWidth={2}
             strokeDasharray="8 4"
-            name={t("chart.fitted")}
+            name={t('chart.fitted')}
             dot={renderCriticalDot}
             activeDot={{ r: 4 }}
             connectNulls={true}

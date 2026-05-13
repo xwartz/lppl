@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useCallback, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 export type URLStateConfig = {
   symbol: string
@@ -20,7 +20,7 @@ export const useURLState = (defaults: URLStateConfig) => {
   const getInitialValue = useCallback(
     <K extends keyof URLStateConfig>(
       key: K,
-      parser: (value: string) => URLStateConfig[K]
+      parser: (value: string) => URLStateConfig[K],
     ): URLStateConfig[K] => {
       const urlValue = searchParams.get(key as string)
       if (urlValue !== null) {
@@ -32,68 +32,67 @@ export const useURLState = (defaults: URLStateConfig) => {
       }
       return defaults[key]
     },
-    [searchParams, defaults]
+    [searchParams, defaults],
   )
 
   // Parse URL parameters
-  const [symbol, setSymbolState] = useState(() =>
-    getInitialValue("symbol", (v) => v.toUpperCase())
-  )
+  const [symbol, setSymbolState] = useState(() => getInitialValue('symbol', (v) => v.toUpperCase()))
   const [days, setDaysState] = useState(() =>
-    getInitialValue("days", (v) => {
+    getInitialValue('days', (v) => {
       const num = Number(v)
       return Number.isNaN(num) ? defaults.days : num
-    })
+    }),
   )
   const [useCustomRange, setUseCustomRangeState] = useState(() =>
-    getInitialValue("useCustomRange", (v) => v === "true")
+    getInitialValue('useCustomRange', (v) => v === 'true'),
   )
   const [customStart, setCustomStartState] = useState(() =>
-    getInitialValue("customStart", (v) => v)
+    getInitialValue('customStart', (v) => v),
   )
-  const [customEnd, setCustomEndState] = useState(() =>
-    getInitialValue("customEnd", (v) => v)
-  )
+  const [customEnd, setCustomEndState] = useState(() => getInitialValue('customEnd', (v) => v))
   const [maxIter, setMaxIterState] = useState(() =>
-    getInitialValue("maxIter", (v) => {
+    getInitialValue('maxIter', (v) => {
       const num = Number(v)
       return Number.isNaN(num) ? defaults.maxIter : num
-    })
+    }),
   )
   const [restarts, setRestartsState] = useState(() =>
-    getInitialValue("restarts", (v) => {
+    getInitialValue('restarts', (v) => {
       const num = Number(v)
       return Number.isNaN(num) ? defaults.restarts : num
-    })
+    }),
   )
   const [tol, setTolState] = useState(() =>
-    getInitialValue("tol", (v) => {
+    getInitialValue('tol', (v) => {
       const num = Number(v)
       return Number.isNaN(num) ? defaults.tol : num
-    })
+    }),
   )
   const [showAdvanced, setShowAdvancedState] = useState(() =>
-    getInitialValue("showAdvanced", (v) => v === "true")
+    getInitialValue('showAdvanced', (v) => v === 'true'),
   )
 
   // Update URL when state changes
   const updateURL = useCallback(
     (updates: Partial<URLStateConfig>) => {
-      setSearchParams((prev) => {
-        const newParams = new URLSearchParams(prev)
+      setSearchParams(
+        (prev) => {
+          const newParams = new URLSearchParams(prev)
 
-        Object.entries(updates).forEach(([key, value]) => {
-          if (value === undefined || value === null) {
-            newParams.delete(key)
-          } else {
-            newParams.set(key, String(value))
-          }
-        })
+          Object.entries(updates).forEach(([key, value]) => {
+            if (value === undefined || value === null) {
+              newParams.delete(key)
+            } else {
+              newParams.set(key, String(value))
+            }
+          })
 
-        return newParams
-      }, { replace: true }) // Use replace to avoid cluttering browser history
+          return newParams
+        },
+        { replace: true },
+      ) // Use replace to avoid cluttering browser history
     },
-    [setSearchParams]
+    [setSearchParams],
   )
 
   // Wrapped setters that also update URL
@@ -102,7 +101,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setSymbolState(value)
       updateURL({ symbol: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setDays = useCallback(
@@ -110,7 +109,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setDaysState(value)
       updateURL({ days: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setUseCustomRange = useCallback(
@@ -118,7 +117,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setUseCustomRangeState(value)
       updateURL({ useCustomRange: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setCustomStart = useCallback(
@@ -126,7 +125,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setCustomStartState(value)
       updateURL({ customStart: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setCustomEnd = useCallback(
@@ -134,7 +133,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setCustomEndState(value)
       updateURL({ customEnd: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setMaxIter = useCallback(
@@ -142,7 +141,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setMaxIterState(value)
       updateURL({ maxIter: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setRestarts = useCallback(
@@ -150,7 +149,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setRestartsState(value)
       updateURL({ restarts: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setTol = useCallback(
@@ -158,7 +157,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setTolState(value)
       updateURL({ tol: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   const setShowAdvanced = useCallback(
@@ -166,7 +165,7 @@ export const useURLState = (defaults: URLStateConfig) => {
       setShowAdvancedState(value)
       updateURL({ showAdvanced: value })
     },
-    [updateURL]
+    [updateURL],
   )
 
   return {
@@ -190,4 +189,3 @@ export const useURLState = (defaults: URLStateConfig) => {
     setShowAdvanced,
   }
 }
-

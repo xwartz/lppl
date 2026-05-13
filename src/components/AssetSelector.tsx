@@ -1,11 +1,11 @@
-import React from 'react'
+import type React from 'react'
 
 interface Props {
   symbol: string
   setSymbol: (s: string) => void
 }
 
-const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "ZECUSDT"]
+const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ZECUSDT']
 
 const AssetSelector: React.FC<Props> = ({ symbol, setSymbol }) => {
   return (
@@ -16,7 +16,7 @@ const AssetSelector: React.FC<Props> = ({ symbol, setSymbol }) => {
     >
       {symbols.map((s) => (
         <option key={s} value={s}>
-          {s.replace("USDT", "")}
+          {s.replace('USDT', '')}
         </option>
       ))}
     </select>

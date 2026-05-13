@@ -13,5 +13,3 @@ export const ThemeContext = createContext<ThemeContextValue>({
 })
 
 export const useTheme = () => useContext(ThemeContext)
-
-

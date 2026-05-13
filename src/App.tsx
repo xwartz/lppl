@@ -1,12 +1,12 @@
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom"
-import CryptoLPPLPage from "./pages/CryptoLPPLPage"
-import StockLPPLPage from "./pages/StockLPPLPage"
-import CommodityLPPLPage from "./pages/CommodityLPPLPage"
-import ThemeToggle from "./components/ThemeToggle"
-import LanguageToggle from "./components/LanguageToggle"
-import { Bitcoin, TrendingUp } from "lucide-react"
-import { CommodityIcon } from "./components/icons/CommodityIcon"
-import { useI18n } from "./lib/i18n"
+import { Bitcoin, TrendingUp } from 'lucide-react'
+import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { CommodityIcon } from './components/icons/CommodityIcon'
+import LanguageToggle from './components/LanguageToggle'
+import ThemeToggle from './components/ThemeToggle'
+import { useI18n } from './lib/i18n'
+import CommodityLPPLPage from './pages/CommodityLPPLPage'
+import CryptoLPPLPage from './pages/CryptoLPPLPage'
+import StockLPPLPage from './pages/StockLPPLPage'
 
 function App() {
   const { t } = useI18n()
@@ -20,9 +20,7 @@ function App() {
             <div className="flex h-16 items-center justify-between">
               {/* Logo */}
               <div className="flex items-center gap-6">
-                <h1 className="text-lg font-semibold tracking-tight text-text">
-                  {t("app.title")}
-                </h1>
+                <h1 className="text-lg font-semibold tracking-tight text-text">{t('app.title')}</h1>
 
                 {/* Navigation Tabs - Minimalist Style */}
                 <nav className="hidden sm:flex items-center gap-1 border border-border-var rounded-lg p-1 bg-panel">
@@ -31,40 +29,34 @@ function App() {
                     end
                     className={({ isActive }) =>
                       `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-card shadow-sm text-text"
-                          : "text-muted hover:text-text"
+                        isActive ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'
                       }`
                     }
                   >
                     <Bitcoin size={14} />
-                    <span>{t("nav.crypto")}</span>
+                    <span>{t('nav.crypto')}</span>
                   </NavLink>
                   <NavLink
                     to="/stocks"
                     className={({ isActive }) =>
                       `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-card shadow-sm text-text"
-                          : "text-muted hover:text-text"
+                        isActive ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'
                       }`
                     }
                   >
                     <TrendingUp size={14} />
-                    <span>{t("nav.stocks")}</span>
+                    <span>{t('nav.stocks')}</span>
                   </NavLink>
                   <NavLink
                     to="/commodities"
                     className={({ isActive }) =>
                       `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-card shadow-sm text-text"
-                          : "text-muted hover:text-text"
+                        isActive ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'
                       }`
                     }
                   >
                     <CommodityIcon size={14} />
-                    <span>{t("nav.commodities")}</span>
+                    <span>{t('nav.commodities')}</span>
                   </NavLink>
                 </nav>
               </div>
@@ -78,9 +70,7 @@ function App() {
                     end
                     className={({ isActive }) =>
                       `flex items-center justify-center w-9 h-9 rounded-md transition-all ${
-                        isActive
-                          ? "bg-card shadow-sm text-text"
-                          : "text-muted hover:text-text"
+                        isActive ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'
                       }`
                     }
                   >
@@ -90,9 +80,7 @@ function App() {
                     to="/stocks"
                     className={({ isActive }) =>
                       `flex items-center justify-center w-9 h-9 rounded-md transition-all ${
-                        isActive
-                          ? "bg-card shadow-sm text-text"
-                          : "text-muted hover:text-text"
+                        isActive ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'
                       }`
                     }
                   >
@@ -102,9 +90,7 @@ function App() {
                     to="/commodities"
                     className={({ isActive }) =>
                       `flex items-center justify-center w-9 h-9 rounded-md transition-all ${
-                        isActive
-                          ? "bg-card shadow-sm text-text"
-                          : "text-muted hover:text-text"
+                        isActive ? 'bg-card shadow-sm text-text' : 'text-muted hover:text-text'
                       }`
                     }
                   >

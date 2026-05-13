@@ -18,7 +18,7 @@ export interface LPPLResult {
   fitted: number[]
   residual: number
   criticalDate: Date | null
-  riskLevel: "low" | "medium" | "high"
+  riskLevel: 'low' | 'medium' | 'high'
   riskReasons?: string[]
   sse?: number
   rmse?: number
@@ -43,7 +43,7 @@ const model = (theta: number[], t: number) => {
   const dt = tc - t
   if (!Number.isFinite(dt) || dt <= 0) return A
   const dtSafe = Math.max(dt, EPS)
-  const pow = Math.pow(dtSafe, m)
+  const pow = dtSafe ** m
   const val = A + B * pow + C * pow * Math.cos(omega * Math.log(dtSafe) + phi)
   return Number.isFinite(val) ? val : A
 }
@@ -52,14 +52,10 @@ class LPPL {
   t: Float64Array
   y: Float64Array
 
-  constructor(
-    time: number[] | Float64Array,
-    logPrice: number[] | Float64Array
-  ) {
+  constructor(time: number[] | Float64Array, logPrice: number[] | Float64Array) {
     this.t = Float64Array.from(time)
     this.y = Float64Array.from(logPrice)
-    if (this.t.length !== this.y.length)
-      throw new Error("time and logPrice must have same length")
+    if (this.t.length !== this.y.length) throw new Error('time and logPrice must have same length')
   }
 
   static lpplAtVec(t: Float64Array, v: number[]): Float64Array {
@@ -71,7 +67,7 @@ class LPPL {
         out[i] = Number.POSITIVE_INFINITY
         continue
       }
-      const xm = Math.pow(x, m)
+      const xm = x ** m
       out[i] = A + B * xm + C * xm * Math.cos(omega * Math.log(x) + phi)
     }
     return out
@@ -118,8 +114,7 @@ class LPPL {
 
     for (let k = 0; k < n; k++) {
       let maxRow = k
-      for (let i = k + 1; i < n; i++)
-        if (Math.abs(M[i][k]) > Math.abs(M[maxRow][k])) maxRow = i
+      for (let i = k + 1; i < n; i++) if (Math.abs(M[i][k]) > Math.abs(M[maxRow][k])) maxRow = i
       if (maxRow !== k) {
         ;[M[k], M[maxRow]] = [M[maxRow], M[k]]
         ;[rhs[k], rhs[maxRow]] = [rhs[maxRow], rhs[k]]
@@ -145,7 +140,7 @@ class LPPL {
   private buildDesignMatrix(
     tc: number,
     m: number,
-    omega: number
+    omega: number,
   ): { X: number[][]; idx: number[] } {
     const X: number[][] = []
     const idx: number[] = []
@@ -153,7 +148,7 @@ class LPPL {
       const dt = tc - this.t[i]
       if (!Number.isFinite(dt) || dt <= 0) continue
       const x = Math.max(dt, EPS)
-      const xm = Math.pow(x, m)
+      const xm = x ** m
       const ln = Math.log(x)
       const cosw = Math.cos(omega * ln)
       const sinw = Math.sin(omega * ln)
@@ -167,9 +162,7 @@ class LPPL {
     if (X.length === 0) return null
     const nRows = X.length
     const nCols = X[0].length
-    const XtX: number[][] = Array.from({ length: nCols }, () =>
-      new Array(nCols).fill(0)
-    )
+    const XtX: number[][] = Array.from({ length: nCols }, () => new Array(nCols).fill(0))
     const Xty: number[] = new Array(nCols).fill(0)
     for (let i = 0; i < nRows; i++) {
       const row = X[i]
@@ -185,7 +178,7 @@ class LPPL {
   private evaluateSeparable(
     tc: number,
     m: number,
-    omega: number
+    omega: number,
   ): {
     ok: boolean
     A?: number
@@ -196,8 +189,7 @@ class LPPL {
     O?: number
     D?: number
   } {
-    if (!Number.isFinite(tc) || !Number.isFinite(m) || !Number.isFinite(omega))
-      return { ok: false }
+    if (!Number.isFinite(tc) || !Number.isFinite(m) || !Number.isFinite(omega)) return { ok: false }
     const { X, idx } = this.buildDesignMatrix(tc, m, omega)
     if (X.length < 5) return { ok: false }
     const ysub = idx.map((i) => this.y[i])
@@ -260,20 +252,17 @@ class LPPL {
         O: [2.5, 13] as [number, number],
         D: [0.5, 1.0] as [number, number],
       },
-      options?.filters || {}
+      options?.filters || {},
     )
     const maxSearches = Math.max(10, options?.maxSearches ?? 50)
 
-    let best: { params: LPPLParams; cost: number; iterations: number } | null =
-      null
+    let best: { params: LPPLParams; cost: number; iterations: number } | null = null
     // Deterministic RNG (Park–Miller LCG)
     const rng = (() => {
       const mod = 2147483647
       const mul = 16807
       let seed = Math.floor(
-        options?.seed && Number.isFinite(options.seed)
-          ? (options.seed as number)
-          : 1234567
+        options?.seed && Number.isFinite(options.seed) ? (options.seed as number) : 1234567,
       )
       if (seed <= 0) seed = 1234567
       return () => {
@@ -317,23 +306,17 @@ class LPPL {
       const { params } = best
       const refineSteps = Math.ceil(maxSearches * 0.5)
       for (let k = 0; k < refineSteps; k++) {
-        const m = Math.min(
-          b.m![1],
-          Math.max(b.m![0], params.m + (rng() - 0.5) * 0.1)
-        )
+        const m = Math.min(b.m![1], Math.max(b.m![0], params.m + (rng() - 0.5) * 0.1))
         const omega = Math.min(
           b.omega![1],
-          Math.max(b.omega![0], params.omega + (rng() - 0.5) * 1.0)
+          Math.max(b.omega![0], params.omega + (rng() - 0.5) * 1.0),
         )
         const lastT2 = Math.max(...this.t)
         const firstT2 = Math.min(...this.t)
         const window2 = Math.max(1, lastT2 - firstT2)
         const tc = Math.min(
           b.tc![1],
-          Math.max(
-            b.tc![0],
-            params.tc + (rng() - 0.5) * Math.max(1, window2 * 0.1)
-          )
+          Math.max(b.tc![0], params.tc + (rng() - 0.5) * Math.max(1, window2 * 0.1)),
         )
         const evalRes = this.evaluateSeparable(tc, m, omega)
         iters++
@@ -372,10 +355,7 @@ class LPPL {
     const firstT = Math.min(...this.t)
     const meanY = this.y.reduce((a, b) => a + b, 0) / this.y.length
 
-    const opts = Object.assign(
-      { maxIter: 200, lambda0: 1e-3, tol: 1e-9 },
-      options || {}
-    )
+    const opts = Object.assign({ maxIter: 200, lambda0: 1e-3, tol: 1e-9 }, options || {})
 
     const initial: LPPLParams = Object.assign(
       {
@@ -387,18 +367,10 @@ class LPPL {
         omega: 8.0,
         phi: 0.0,
       },
-      opts.initial || {}
+      opts.initial || {},
     )
 
-    const toVec = (p: LPPLParams): number[] => [
-      p.A,
-      p.B,
-      p.C,
-      p.tc,
-      p.m,
-      p.omega,
-      p.phi,
-    ]
+    const toVec = (p: LPPLParams): number[] => [p.A, p.B, p.C, p.tc, p.m, p.omega, p.phi]
     const fromVec = (v: number[]): LPPLParams => ({
       A: v[0],
       B: v[1],
@@ -418,9 +390,7 @@ class LPPL {
       const J = this.jacobian(v)
 
       const nParams = v.length
-      const JTJ: number[][] = Array.from({ length: nParams }, () =>
-        new Array(nParams).fill(0)
-      )
+      const JTJ: number[][] = Array.from({ length: nParams }, () => new Array(nParams).fill(0))
       const JTr: number[] = new Array(nParams).fill(0)
 
       for (let i = 0; i < this.t.length; i++) {
@@ -483,8 +453,7 @@ class LPPL {
     converged: boolean
   } {
     const restarts = options?.restarts ?? 5
-    let best: { params: LPPLParams; cost: number; iterations: number } | null =
-      null
+    let best: { params: LPPLParams; cost: number; iterations: number } | null = null
 
     for (let r = 0; r < restarts; r++) {
       const lastT = Math.max(...this.t)
@@ -497,11 +466,7 @@ class LPPL {
           tc: [
             lastT + 1e-3,
             lastT +
-              Math.max(
-                1,
-                (lastT - firstT) *
-                  (0.8 + (((options?.seed ?? 0) + r + 1) % 997) / 997)
-              ),
+              Math.max(1, (lastT - firstT) * (0.8 + (((options?.seed ?? 0) + r + 1) % 997) / 997)),
           ],
         },
         seed: (options?.seed ?? 0) + r + 1,
@@ -543,9 +508,7 @@ class LPPL {
     if (bootstrapN > 0) {
       const n = this.t.length
       for (let b = 0; b < bootstrapN; b++) {
-        const indices = Float64Array.from({ length: n }, () =>
-          Math.floor(Math.random() * n)
-        )
+        const indices = Float64Array.from({ length: n }, () => Math.floor(Math.random() * n))
         const tSample = Float64Array.from(indices, (i) => this.t[i])
         const ySample = Float64Array.from(indices, (i) => this.y[i])
         const sub = new LPPL(tSample, ySample)
@@ -597,8 +560,7 @@ const matMul = (A: number[][], B: number[][]) => {
     k = B.length
   const C = Array.from({ length: n }, () => Array(m).fill(0))
   for (let i = 0; i < n; i++)
-    for (let j = 0; j < m; j++)
-      for (let t = 0; t < k; t++) C[i][j] += A[i][t] * B[t][j]
+    for (let j = 0; j < m; j++) for (let t = 0; t < k; t++) C[i][j] += A[i][t] * B[t][j]
   return C
 }
 const addRidge = (M: number[][], lambda: number) => {
@@ -610,7 +572,7 @@ const invertMatrix = (M: number[][]) => {
   const n = M.length
   const A = M.map((row) => row.slice())
   const I = Array.from({ length: n }, (_, i) =>
-    Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))
+    Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)),
   )
   for (let i = 0; i < n; i++) {
     let pivot = A[i][i]
@@ -655,13 +617,12 @@ const computePredictedPriceCI = (
   logPrices: number[],
   fittedLog: number[],
   sseVal: number,
-  optParams: LPPLParams
+  optParams: LPPLParams,
 ) => {
   const p = opt.length
   const indices: number[] = []
   for (let i = 0; i < times.length; i++)
-    if (Number.isFinite(logPrices[i]) && Number.isFinite(fittedLog[i]))
-      indices.push(i)
+    if (Number.isFinite(logPrices[i]) && Number.isFinite(fittedLog[i])) indices.push(i)
   const sigma2 = sseVal / Math.max(1, indices.length - p)
   const theta = opt.slice()
   const epsFor = (v: number) => Math.max(1e-6, Math.abs(v) * 1e-6)
@@ -698,8 +659,7 @@ const computePredictedPriceCI = (
     g.push((yPlus - y0) / h)
   }
   let varY = 0
-  for (let i = 0; i < p; i++)
-    for (let j = 0; j < p; j++) varY += g[i] * cov[i][j] * g[j]
+  for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) varY += g[i] * cov[i][j] * g[j]
   if (!Number.isFinite(varY) || varY < 0) return { lower: null, upper: null }
   const yhatTc = model(theta, tc)
   const z = 1.96
@@ -710,7 +670,7 @@ const computePredictedPriceCI = (
 // --- Public fit function (replaces earlier nelder-mead variant) ---
 export const fitLppl = (
   data: KlineData[],
-  options?: { maxIter?: number; restarts?: number; tol?: number }
+  options?: { maxIter?: number; restarts?: number; tol?: number },
 ): LPPLResult => {
   if (!data || data.length < 10) {
     return {
@@ -718,7 +678,7 @@ export const fitLppl = (
       fitted: [],
       residual: NaN,
       criticalDate: null,
-      riskLevel: "low",
+      riskLevel: 'low',
     }
   }
 
@@ -780,14 +740,12 @@ export const fitLppl = (
   const paired = logPrices
     .map((p, i) => ({ p, f: fittedLog[i] }))
     .filter((x) => Number.isFinite(x.p) && Number.isFinite(x.f))
-  const residuals = paired.map((pair) => Math.pow(pair.p - pair.f, 2))
+  const residuals = paired.map((pair) => (pair.p - pair.f) ** 2)
   const sseVal = res.sse ?? residuals.reduce((a, b) => a + b, 0)
   const rmse = Math.sqrt(sseVal / Math.max(1, residuals.length))
 
   const criticalTimestamp = (optParams.tc * 86400 + t0) * 1000
-  const criticalDate = new Date(
-    Number.isFinite(criticalTimestamp) ? criticalTimestamp : Date.now()
-  )
+  const criticalDate = new Date(Number.isFinite(criticalTimestamp) ? criticalTimestamp : Date.now())
 
   const lookback = Math.min(10, prices.length - 1)
   const prevIndex = Math.max(0, prices.length - 1 - lookback)
@@ -798,48 +756,33 @@ export const fitLppl = (
     ? (criticalTimestamp - Date.now()) / (1000 * 86400)
     : Infinity
 
-  let riskLevel: "low" | "medium" | "high" = "low"
+  let riskLevel: 'low' | 'medium' | 'high' = 'low'
   const riskReasons: string[] = []
-  if (
-    !Number.isFinite(rmse) ||
-    rmse > Math.max(1e-3, Math.abs(lastPrice) * 0.5)
-  ) {
-    riskLevel = "low"
-    riskReasons.push("risk.reason.unreliable")
+  if (!Number.isFinite(rmse) || rmse > Math.max(1e-3, Math.abs(lastPrice) * 0.5)) {
+    riskLevel = 'low'
+    riskReasons.push('risk.reason.unreliable')
   } else {
-    if (daysUntilCritical < 0) riskReasons.push("risk.reason.critical.passed")
-    else if (daysUntilCritical < 30)
-      riskReasons.push("risk.reason.critical.near")
-    else if (daysUntilCritical < 60)
-      riskReasons.push("risk.reason.critical.soon")
-    if (priceAcceleration > 0.1) riskReasons.push("risk.reason.price.surge")
-    else if (priceAcceleration > 0.05)
-      riskReasons.push("risk.reason.price.rise")
+    if (daysUntilCritical < 0) riskReasons.push('risk.reason.critical.passed')
+    else if (daysUntilCritical < 30) riskReasons.push('risk.reason.critical.near')
+    else if (daysUntilCritical < 60) riskReasons.push('risk.reason.critical.soon')
+    if (priceAcceleration > 0.1) riskReasons.push('risk.reason.price.surge')
+    else if (priceAcceleration > 0.05) riskReasons.push('risk.reason.price.rise')
 
-    if (
-      daysUntilCritical > 0 &&
-      daysUntilCritical < 30 &&
-      priceAcceleration > 0.1
-    )
-      riskLevel = "high"
-    else if (
-      (daysUntilCritical > 0 && daysUntilCritical < 60) ||
-      priceAcceleration > 0.05
-    )
-      riskLevel = "medium"
-    else riskLevel = "low"
+    if (daysUntilCritical > 0 && daysUntilCritical < 30 && priceAcceleration > 0.1)
+      riskLevel = 'high'
+    else if ((daysUntilCritical > 0 && daysUntilCritical < 60) || priceAcceleration > 0.05)
+      riskLevel = 'medium'
+    else riskLevel = 'low'
   }
 
-  const predictedPrice = Number.isFinite(optParams.A)
-    ? Math.exp(optParams.A)
-    : NaN
+  const predictedPrice = Number.isFinite(optParams.A) ? Math.exp(optParams.A) : NaN
   const ci = computePredictedPriceCI(
     optVec,
     normalizedTimes,
     logPrices,
     fittedLog,
     sseVal,
-    optParams
+    optParams,
   )
 
   return {
@@ -902,7 +845,7 @@ export interface LPPLConfidenceResult {
 
 export const lpplScanConfidence = (
   data: KlineData[],
-  cfg: LPPLScanConfig
+  cfg: LPPLScanConfig,
 ): LPPLConfidenceResult => {
   if (!data || data.length < Math.max(10, cfg.smallestWindowSize)) {
     return { points: [] }
@@ -916,10 +859,7 @@ export const lpplScanConfidence = (
   const endIndex = n - 1
 
   const windowSize = Math.min(Math.max(5, cfg.windowSize), n)
-  const smallest = Math.min(
-    Math.max(5, cfg.smallestWindowSize),
-    Math.max(5, windowSize - 1)
-  )
+  const smallest = Math.min(Math.max(5, cfg.smallestWindowSize), Math.max(5, windowSize - 1))
   const outerInc = Math.max(1, cfg.outerIncrement)
   const innerInc = Math.max(1, cfg.innerIncrement)
 
@@ -936,11 +876,7 @@ export const lpplScanConfidence = (
 
   // Outer window slides backward with fixed end at latest point
   const outerMaxStart = Math.max(0, endIndex - windowSize + 1)
-  for (
-    let start = outerMaxStart;
-    start <= endIndex - smallest;
-    start += outerInc
-  ) {
+  for (let start = outerMaxStart; start <= endIndex - smallest; start += outerInc) {
     const outerStart = start
     const outerEnd = endIndex
     let fits = 0

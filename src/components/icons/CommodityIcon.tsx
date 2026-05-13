@@ -1,11 +1,7 @@
-import React from "react"
-import type { LucideProps } from "lucide-react"
+import type { LucideProps } from 'lucide-react'
+import type React from 'react'
 
-export const CommodityIcon: React.FC<LucideProps> = ({
-  size = 24,
-  className = "",
-  ...props
-}) => {
+export const CommodityIcon: React.FC<LucideProps> = ({ size = 24, className = '', ...props }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -1,6 +1,6 @@
-import React from "react"
-import CommodityLPPLTracker from "../components/CommodityLPPLTracker"
-import SEOHead from "../components/SEOHead"
+import type React from 'react'
+import CommodityLPPLTracker from '../components/CommodityLPPLTracker'
+import SEOHead from '../components/SEOHead'
 
 const CommodityLPPLPage: React.FC = () => {
   return (

@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, RefreshCw, Settings, Calendar } from "lucide-react"
-import PriceChart from "./PriceChart"
-import { fitLppl } from "../lib/lppl"
-import type { KlineData, LPPLResult } from "../lib/lppl"
-import { useURLState } from "../lib/use-url-state"
-import { useI18n } from "../lib/i18n"
+import { AlertTriangle, Calendar, RefreshCw, Settings } from 'lucide-react'
+import type React from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useI18n } from '../lib/i18n'
+import type { KlineData, LPPLResult } from '../lib/lppl'
+import { fitLppl } from '../lib/lppl'
+import { useURLState } from '../lib/use-url-state'
+import PriceChart from './PriceChart'
 
 type FetchArgs = {
   days?: number
@@ -39,7 +40,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
   const defaultEndDate = useMemo(() => new Date(), [])
   const defaultStartDate = useMemo(
     () => new Date(Date.now() - (daysOptions[0] ?? 100) * msPerDay),
-    [daysOptions, msPerDay]
+    [daysOptions],
   )
 
   // URL-synced state
@@ -59,7 +60,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
   const [priceData, setPriceData] = useState<KlineData[]>([])
   const [lpplResult, setLpplResult] = useState<LPPLResult | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState('')
 
   // Temporary input values for form fields
   const [maxIterInput, setMaxIterInput] = useState(String(urlState.maxIter))
@@ -144,7 +145,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
   const fetchAndFit = useCallback(
     async (daysArg?: number, startArg?: number, endArg?: number) => {
       setLoading(true)
-      setError("")
+      setError('')
       try {
         const series = await fetchSeries({
           symbol: urlState.symbol,
@@ -160,28 +161,21 @@ const LPPLTrackerBase: React.FC<Props> = ({
         })
         setLpplResult(res)
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("error.unknown"))
+        setError(err instanceof Error ? err.message : t('error.unknown'))
       } finally {
         setLoading(false)
       }
     },
-    [
-      fetchSeries,
-      urlState.symbol,
-      urlState.maxIter,
-      urlState.restarts,
-      urlState.tol,
-      t,
-    ]
+    [fetchSeries, urlState.symbol, urlState.maxIter, urlState.restarts, urlState.tol, t],
   )
 
   const applyCustomSymbol = () => {
     const s = customSymbolInput.trim().toUpperCase()
     if (!validateSymbol(s)) {
-      setError(t("error.invalid.input"))
+      setError(t('error.invalid.input'))
       return
     }
-    setError("")
+    setError('')
     urlState.setSymbol(s)
   }
 
@@ -191,12 +185,8 @@ const LPPLTrackerBase: React.FC<Props> = ({
       s.setHours(0, 0, 0, 0)
       const e = new Date(urlState.customEnd)
       e.setHours(23, 59, 59, 999)
-      if (
-        Number.isNaN(s.getTime()) ||
-        Number.isNaN(e.getTime()) ||
-        e.getTime() < s.getTime()
-      ) {
-        setError(t("error.invalid.date.range"))
+      if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e.getTime() < s.getTime()) {
+        setError(t('error.invalid.date.range'))
         return
       }
       fetchAndFit(undefined, s.getTime(), e.getTime())
@@ -205,7 +195,6 @@ const LPPLTrackerBase: React.FC<Props> = ({
     }
   }, [
     urlState.days,
-    urlState.symbol,
     fetchAndFit,
     urlState.useCustomRange,
     urlState.customStart,
@@ -216,30 +205,29 @@ const LPPLTrackerBase: React.FC<Props> = ({
   const chartData = priceData.map((d, i) => ({
     date: new Date(d.time).toLocaleDateString(),
     actual: d.close as number,
-    fitted:
-      lpplResult && lpplResult.fitted ? lpplResult.fitted[i] ?? null : null,
+    fitted: lpplResult && lpplResult.fitted ? (lpplResult.fitted[i] ?? null) : null,
     isCriticalPoint: false,
   }))
 
   const getRiskColor = (level: string) => {
     switch (level) {
-      case "high":
-        return "text-danger"
-      case "medium":
-        return "text-warning"
+      case 'high':
+        return 'text-danger'
+      case 'medium':
+        return 'text-warning'
       default:
-        return "text-success"
+        return 'text-success'
     }
   }
 
   const getRiskBorderColor = (level: string) => {
     switch (level) {
-      case "high":
-        return "border-l-danger"
-      case "medium":
-        return "border-l-warning"
+      case 'high':
+        return 'border-l-danger'
+      case 'medium':
+        return 'border-l-warning'
       default:
-        return "border-l-success"
+        return 'border-l-success'
     }
   }
 
@@ -260,7 +248,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     value={customSymbolInput}
                     onChange={(e) => setCustomSymbolInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") applyCustomSymbol()
+                      if (e.key === 'Enter') applyCustomSymbol()
                     }}
                     onBlur={applyCustomSymbol}
                     className="w-32 h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all font-mono uppercase placeholder:text-muted"
@@ -269,7 +257,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     <div className="absolute top-12 left-0 z-50 w-[300px] bg-card border border-border-var rounded-lg shadow-xl p-3 hidden group-focus-within:block hover:block">
                       <div className="flex items-center justify-between mb-2 px-1">
                         <span className="text-xs font-medium text-muted">
-                          {t("stock.suggestions") || "Popular Assets"}
+                          {t('stock.suggestions') || 'Popular Assets'}
                         </span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
@@ -283,9 +271,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                             className="px-2 py-1.5 text-xs rounded-md bg-panel hover:bg-accent/10 border border-border-var hover:border-accent transition-colors text-text text-left flex flex-col items-start overflow-hidden"
                             title={`${item.label} (${item.value})`}
                           >
-                            <span className="font-semibold truncate w-full">
-                              {item.label}
-                            </span>
+                            <span className="font-semibold truncate w-full">{item.label}</span>
                             <span className="text-[10px] text-muted opacity-80 truncate w-full">
                               {item.value}
                             </span>
@@ -300,13 +286,11 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   <input
                     type="checkbox"
                     checked={urlState.useCustomRange}
-                    onChange={(e) =>
-                      urlState.setUseCustomRange(e.target.checked)
-                    }
+                    onChange={(e) => urlState.setUseCustomRange(e.target.checked)}
                     className="w-4 h-4 rounded"
                   />
                   <Calendar size={14} className="text-muted" />
-                  <span className="hidden sm:inline">{t("time.custom")}</span>
+                  <span className="hidden sm:inline">{t('time.custom')}</span>
                 </label>
 
                 {!urlState.useCustomRange && (
@@ -317,7 +301,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   >
                     {daysOptions.map((opt) => (
                       <option key={opt} value={opt}>
-                        {t("time.last")} {opt} {t("time.days")}
+                        {t('time.last')} {opt} {t('time.days')}
                       </option>
                     ))}
                   </select>
@@ -328,23 +312,17 @@ const LPPLTrackerBase: React.FC<Props> = ({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    urlState.setShowAdvanced(!urlState.showAdvanced)
-                  }
+                  onClick={() => urlState.setShowAdvanced(!urlState.showAdvanced)}
                   className={`btn-secondary h-10 px-3 flex items-center gap-2 rounded-lg text-sm ${
-                    urlState.showAdvanced ? "ring-2 ring-accent/20" : ""
+                    urlState.showAdvanced ? 'ring-2 ring-accent/20' : ''
                   }`}
-                  title={t("advanced.settings")}
+                  title={t('advanced.settings')}
                 >
                   <Settings
                     size={16}
-                    className={`transition-transform ${
-                      urlState.showAdvanced ? "rotate-90" : ""
-                    }`}
+                    className={`transition-transform ${urlState.showAdvanced ? 'rotate-90' : ''}`}
                   />
-                  <span className="hidden sm:inline">
-                    {t("advanced.settings")}
-                  </span>
+                  <span className="hidden sm:inline">{t('advanced.settings')}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -358,7 +336,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                         Number.isNaN(e.getTime()) ||
                         e.getTime() < s.getTime()
                       ) {
-                        setError(t("time.invalid.date"))
+                        setError(t('time.invalid.date'))
                         return
                       }
                       fetchAndFit(undefined, s.getTime(), e.getTime())
@@ -368,13 +346,10 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   }}
                   disabled={loading}
                   className="btn-primary h-10 px-3 flex items-center gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium hover:shadow-lg"
-                  title={t("time.refresh")}
+                  title={t('time.refresh')}
                 >
-                  <RefreshCw
-                    size={16}
-                    className={loading ? "animate-spin" : ""}
-                  />
-                  <span className="hidden sm:inline">{t("time.refresh")}</span>
+                  <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                  <span className="hidden sm:inline">{t('time.refresh')}</span>
                 </button>
               </div>
             </div>
@@ -387,18 +362,18 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   value={customStartInput}
                   onChange={(e) => setCustomStartInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") applyCustomStart()
+                    if (e.key === 'Enter') applyCustomStart()
                   }}
                   onBlur={applyCustomStart}
                   className="h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all"
                 />
-                <span className="text-muted text-sm">{t("time.to")}</span>
+                <span className="text-muted text-sm">{t('time.to')}</span>
                 <input
                   type="date"
                   value={customEndInput}
                   onChange={(e) => setCustomEndInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") applyCustomEnd()
+                    if (e.key === 'Enter') applyCustomEnd()
                   }}
                   onBlur={applyCustomEnd}
                   className="h-10 px-3 text-sm rounded-lg border-2 border-border-var bg-panel focus:border-accent focus:bg-card transition-all"
@@ -410,17 +385,13 @@ const LPPLTrackerBase: React.FC<Props> = ({
             {urlState.showAdvanced && (
               <div className="mt-4 pt-4 border-t border-border-var animate-in fade-in duration-200">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium text-text">
-                    {t("advanced.model.config")}
-                  </h4>
-                  <span className="text-xs text-muted">
-                    {t("advanced.apply.hint")}
-                  </span>
+                  <h4 className="text-sm font-medium text-text">{t('advanced.model.config')}</h4>
+                  <span className="text-xs text-muted">{t('advanced.apply.hint')}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs text-muted mb-2">
-                      {t("advanced.max.iterations")}
+                      {t('advanced.max.iterations')}
                     </label>
                     <input
                       type="number"
@@ -429,7 +400,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                       value={maxIterInput}
                       onChange={(e) => setMaxIterInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                        if (e.key === 'Enter') {
                           applyMaxIter()
                           e.currentTarget.blur()
                         }
@@ -441,7 +412,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   </div>
                   <div>
                     <label className="block text-xs text-muted mb-2">
-                      {t("advanced.restarts")}
+                      {t('advanced.restarts')}
                     </label>
                     <input
                       type="number"
@@ -450,7 +421,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                       value={restartsInput}
                       onChange={(e) => setRestartsInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                        if (e.key === 'Enter') {
                           applyRestarts()
                           e.currentTarget.blur()
                         }
@@ -462,14 +433,14 @@ const LPPLTrackerBase: React.FC<Props> = ({
                   </div>
                   <div>
                     <label className="block text-xs text-muted mb-2">
-                      {t("advanced.tolerance")}
+                      {t('advanced.tolerance')}
                     </label>
                     <input
                       type="text"
                       value={tolInput}
                       onChange={(e) => setTolInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                        if (e.key === 'Enter') {
                           applyTol()
                           e.currentTarget.blur()
                         }
@@ -501,104 +472,84 @@ const LPPLTrackerBase: React.FC<Props> = ({
               {/* Risk Level Card */}
               <div
                 className={`bg-card border border-border-var ${getRiskBorderColor(
-                  lpplResult.riskLevel
+                  lpplResult.riskLevel,
                 )} border-l-4 rounded-xl p-4 sm:p-6 shadow-sm`}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <AlertTriangle
-                    className={getRiskColor(lpplResult.riskLevel)}
-                    size={20}
-                  />
-                  <h3 className="text-sm font-medium text-text">
-                    {t("risk.level")}
-                  </h3>
+                  <AlertTriangle className={getRiskColor(lpplResult.riskLevel)} size={20} />
+                  <h3 className="text-sm font-medium text-text">{t('risk.level')}</h3>
                 </div>
                 <p
                   className={`text-2xl sm:text-3xl font-semibold ${getRiskColor(
-                    lpplResult.riskLevel
+                    lpplResult.riskLevel,
                   )}`}
                 >
-                  {lpplResult.riskLevel === "high"
-                    ? t("risk.high")
-                    : lpplResult.riskLevel === "medium"
-                    ? t("risk.medium")
-                    : t("risk.low")}
+                  {lpplResult.riskLevel === 'high'
+                    ? t('risk.high')
+                    : lpplResult.riskLevel === 'medium'
+                      ? t('risk.medium')
+                      : t('risk.low')}
                 </p>
-                {lpplResult.riskReasons &&
-                  lpplResult.riskReasons.length > 0 && (
-                    <ul className="mt-3 space-y-1">
-                      {lpplResult.riskReasons.map((r, idx) => (
-                        <li key={idx} className="text-xs text-muted">
-                          • {t(r)}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                {lpplResult.riskReasons && lpplResult.riskReasons.length > 0 && (
+                  <ul className="mt-3 space-y-1">
+                    {lpplResult.riskReasons.map((r, idx) => (
+                      <li key={idx} className="text-xs text-muted">
+                        • {t(r)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Critical Date Card */}
               <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 shadow-sm">
-                <h3 className="text-sm font-medium text-text mb-3">
-                  {t("critical.point")}
-                </h3>
+                <h3 className="text-sm font-medium text-text mb-3">{t('critical.point')}</h3>
                 <p className="text-xl sm:text-2xl font-semibold text-info">
                   {lpplResult.criticalDate?.toLocaleDateString(
-                    language === "zh" ? "zh-CN" : "en-US"
+                    language === 'zh' ? 'zh-CN' : 'en-US',
                   )}
                 </p>
                 <p className="text-xs text-muted mt-2">
                   {(() => {
                     const daysFromNow = Math.round(
-                      (lpplResult.criticalDate!.getTime() - Date.now()) /
-                        (1000 * 86400)
+                      (lpplResult.criticalDate!.getTime() - Date.now()) / (1000 * 86400),
                     )
                     const absDays = Math.abs(daysFromNow)
 
                     if (daysFromNow > 0) {
-                      return `${t("critical.about")} ${absDays} ${t(
-                        "critical.days.after"
-                      )}`
+                      return `${t('critical.about')} ${absDays} ${t('critical.days.after')}`
                     } else if (daysFromNow < 0) {
-                      return `${t("critical.about")} ${absDays} ${t(
-                        "critical.days.before"
-                      )}`
+                      return `${t('critical.about')} ${absDays} ${t('critical.days.before')}`
                     } else {
-                      return t("critical.today")
+                      return t('critical.today')
                     }
                   })()}
                 </p>
-                {lpplResult.predictedPrice &&
-                  Number.isFinite(lpplResult.predictedPrice) && (
-                    <div className="mt-3 pt-3 border-t border-border-var">
-                      <p className="text-xs text-muted">
-                        {t("critical.price")}
-                      </p>
-                      <p className="text-base font-semibold text-info mt-1">
-                        {priceFormatter(lpplResult.predictedPrice)}
-                      </p>
-                    </div>
-                  )}
+                {lpplResult.predictedPrice && Number.isFinite(lpplResult.predictedPrice) && (
+                  <div className="mt-3 pt-3 border-t border-border-var">
+                    <p className="text-xs text-muted">{t('critical.price')}</p>
+                    <p className="text-base font-semibold text-info mt-1">
+                      {priceFormatter(lpplResult.predictedPrice)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Model Fit Card */}
               <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 shadow-sm">
-                <h3 className="text-sm font-medium text-text mb-3">
-                  {t("model.fit")}
-                </h3>
+                <h3 className="text-sm font-medium text-text mb-3">{t('model.fit')}</h3>
                 <p className="text-xl sm:text-2xl font-semibold text-accent">
                   {lpplResult.residual.toFixed(2)}
                 </p>
-                <p className="text-xs text-muted mt-2">{t("model.residual")}</p>
+                <p className="text-xs text-muted mt-2">{t('model.residual')}</p>
                 <div className="mt-3 pt-3 border-t border-border-var">
-                  <p className="text-xs text-muted">{t("model.status")}</p>
+                  <p className="text-xs text-muted">{t('model.status')}</p>
                   <p
                     className={`text-sm font-medium mt-1 ${
-                      lpplResult.converged ? "text-success" : "text-warning"
+                      lpplResult.converged ? 'text-success' : 'text-warning'
                     }`}
                   >
-                    {lpplResult.converged
-                      ? t("model.converged")
-                      : t("model.not.converged")}
+                    {lpplResult.converged ? t('model.converged') : t('model.not.converged')}
                   </p>
                 </div>
               </div>
@@ -607,7 +558,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
             {/* Chart */}
             <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-sm relative">
               <h2 className="text-base sm:text-lg font-semibold text-text mb-4">
-                {t("chart.price.fit")}
+                {t('chart.price.fit')}
               </h2>
               <PriceChart
                 data={chartData}
@@ -619,9 +570,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                 <div className="absolute inset-0 bg-card/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
                   <div className="flex items-center gap-3">
                     <RefreshCw size={18} className="animate-spin text-accent" />
-                    <span className="text-sm text-text">
-                      {t("time.refreshing")}
-                    </span>
+                    <span className="text-sm text-text">{t('time.refreshing')}</span>
                   </div>
                 </div>
               )}
@@ -630,57 +579,43 @@ const LPPLTrackerBase: React.FC<Props> = ({
             {/* Model Parameters */}
             <div className="bg-card border border-border-var rounded-xl p-4 sm:p-6 shadow-sm">
               <h2 className="text-base sm:text-lg font-semibold text-text mb-4">
-                {t("params.model")}
+                {t('params.model')}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.baseline.log")}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.baseline.log')}</p>
                   <p className="text-sm font-mono text-text">
-                    {lpplResult.params?.A.toFixed(3) ?? "-"}
+                    {lpplResult.params?.A.toFixed(3) ?? '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.baseline.price")}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.baseline.price')}</p>
                   <p className="text-sm font-mono text-text">
-                    {lpplResult.params?.A
-                      ? priceFormatter(Math.exp(lpplResult.params.A))
-                      : "-"}
+                    {lpplResult.params?.A ? priceFormatter(Math.exp(lpplResult.params.A)) : '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.tc.label")}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.tc.label')}</p>
                   <p className="text-sm font-mono text-text">
-                    {lpplResult.params?.tc.toFixed(2) ?? "-"}
+                    {lpplResult.params?.tc.toFixed(2) ?? '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.m.label")}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.m.label')}</p>
                   <p className="text-sm font-mono text-text">
-                    {lpplResult.params?.m.toFixed(3) ?? "-"}
+                    {lpplResult.params?.m.toFixed(3) ?? '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.omega.label")}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.omega.label')}</p>
                   <p className="text-sm font-mono text-text">
-                    {lpplResult.params?.omega.toFixed(3) ?? "-"}
+                    {lpplResult.params?.omega.toFixed(3) ?? '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.phi.label")}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.phi.label')}</p>
                   <p className="text-sm font-mono text-text">
-                    {lpplResult.params?.phi.toFixed(3) ?? "-"}
+                    {lpplResult.params?.phi.toFixed(3) ?? '-'}
                   </p>
                 </div>
               </div>
@@ -688,32 +623,20 @@ const LPPLTrackerBase: React.FC<Props> = ({
               {/* Performance Metrics */}
               <div className="mt-4 pt-4 border-t border-border-var grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-muted mb-1">{t("params.sse")}</p>
-                  <p className="text-sm font-mono text-text">
-                    {(lpplResult.sse ?? 0).toFixed(4)}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.sse')}</p>
+                  <p className="text-sm font-mono text-text">{(lpplResult.sse ?? 0).toFixed(4)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">{t("params.rmse")}</p>
-                  <p className="text-sm font-mono text-text">
-                    {(lpplResult.rmse ?? 0).toFixed(6)}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.rmse')}</p>
+                  <p className="text-sm font-mono text-text">{(lpplResult.rmse ?? 0).toFixed(6)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.iterations.label")}
-                  </p>
-                  <p className="text-sm font-mono text-text">
-                    {lpplResult.iterations ?? "-"}
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.iterations.label')}</p>
+                  <p className="text-sm font-mono text-text">{lpplResult.iterations ?? '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted mb-1">
-                    {t("params.runtime")}
-                  </p>
-                  <p className="text-sm font-mono text-text">
-                    {lpplResult.runTimeMs ?? 0} ms
-                  </p>
+                  <p className="text-xs text-muted mb-1">{t('params.runtime')}</p>
+                  <p className="text-sm font-mono text-text">{lpplResult.runTimeMs ?? 0} ms</p>
                 </div>
               </div>
             </div>
@@ -721,7 +644,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
         )}
         {/* Disclaimer */}
         <div className="mt-6 p-3 bg-panel border border-border-var rounded-lg">
-          <p className="text-xs text-muted">{t("footer.disclaimer")}</p>
+          <p className="text-xs text-muted">{t('footer.disclaimer')}</p>
         </div>
         {/* Subtle Loading Bar */}
         {loading && !lpplResult && (
@@ -729,7 +652,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
             <div className="h-1 bg-accent/20 overflow-hidden">
               <div
                 className="h-full bg-accent animate-pulse"
-                style={{ animation: "loading-slide 1.5s ease-in-out infinite" }}
+                style={{ animation: 'loading-slide 1.5s ease-in-out infinite' }}
               />
             </div>
             <style>{`

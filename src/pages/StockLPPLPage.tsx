@@ -1,6 +1,6 @@
-import React from "react"
-import StockLPPLTracker from "../components/StockLPPLTracker"
-import SEOHead from "../components/SEOHead"
+import type React from 'react'
+import SEOHead from '../components/SEOHead'
+import StockLPPLTracker from '../components/StockLPPLTracker'
 
 const StockLPPLPage: React.FC = () => {
   return (
@@ -12,5 +12,3 @@ const StockLPPLPage: React.FC = () => {
 }
 
 export default StockLPPLPage
-
-

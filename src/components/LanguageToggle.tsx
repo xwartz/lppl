@@ -1,6 +1,6 @@
-import React from "react"
-import { Languages } from "lucide-react"
-import { useI18n, type Language } from "../lib/i18n"
+import { Languages } from 'lucide-react'
+import React from 'react'
+import { type Language, useI18n } from '../lib/i18n'
 
 const LanguageToggle: React.FC = () => {
   const { language, setLanguage } = useI18n()
@@ -10,7 +10,7 @@ const LanguageToggle: React.FC = () => {
     setIsAnimating(true)
     setTimeout(() => setIsAnimating(false), 500)
 
-    const newLang: Language = language === "zh" ? "en" : "zh"
+    const newLang: Language = language === 'zh' ? 'en' : 'zh'
     setLanguage(newLang)
   }
 
@@ -18,12 +18,12 @@ const LanguageToggle: React.FC = () => {
     <button
       onClick={toggleLanguage}
       className="btn-secondary h-10 w-10 flex items-center justify-center rounded-lg transition-all hover:scale-110"
-      aria-label={`${language === "zh" ? "中文" : "English"}`}
+      aria-label={`${language === 'zh' ? '中文' : 'English'}`}
       type="button"
     >
       <span
         className={`inline-flex transition-all duration-300 ${
-          isAnimating ? "rotate-180 scale-90" : "rotate-0 scale-100"
+          isAnimating ? 'rotate-180 scale-90' : 'rotate-0 scale-100'
         }`}
       >
         <Languages size={16} />
@@ -33,4 +33,3 @@ const LanguageToggle: React.FC = () => {
 }
 
 export default LanguageToggle
-
