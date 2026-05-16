@@ -25,7 +25,7 @@ importers:
         version: 3.8.1(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react-is@19.2.0)(react@19.2.6)(redux@5.0.1)
       yahoo-finance2:
         specifier: ^3.14.0
-        version: 3.14.0
+        version: 3.14.1
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.4.15
@@ -1356,8 +1356,8 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  electron-to-chromium@1.5.355:
-    resolution: {integrity: sha512-LUPZhKzZPYSPme1jEYohpkA+ybYCJztr1quAdBd7E7h3+VOBVcKkwwtBJu41nrjawrRzfb8mtMfzWozoaK0ZIQ==}
+  electron-to-chromium@1.5.356:
+    resolution: {integrity: sha512-9NgFd7m5t5MCJ5rUSjJITUXAH9mEGlrlofnMf4YEr+pz6JlP7cWmTAH+JFmbPnaSW8koVTkuW7pacORWAnA5Yw==}
 
   enhanced-resolve@5.21.3:
     resolution: {integrity: sha512-QyL119InA+XXEkNLNTPCXPugSvOfhwv0JOlGNzvxs0hZaiHLNvXSpudUWsOlsXGWJh8G6ckCScEkVHfX3kw/2Q==}
@@ -2407,8 +2407,8 @@ packages:
   workbox-window@7.4.1:
     resolution: {integrity: sha512-notZDH2u8VXaqyuD7xaqIfEFi6SRM4SUSd7ewe9PDsVqADuepxX2ZMY3uvuZGxzY5ZOsGC/vD3A/3smFtJt4/A==}
 
-  yahoo-finance2@3.14.0:
-    resolution: {integrity: sha512-gsT/tqgeizKtMxbIIWFiFyuhM/6MZE4yEyNLmPekr88AX14JL2HWw0/QNMOR081jVtzTjihqDW0zV7IayH1Wcw==}
+  yahoo-finance2@3.14.1:
+    resolution: {integrity: sha512-66bhnBMaxmtbrnFvhiiKqg4KhpUw5pazVF1QvRAElTOrBVDdLPcYdgEyCVz0PH1T/dYUuEddNrCmOus9DeUPkA==}
     engines: {node: '>=20.0.0'}
     hasBin: true
 
@@ -3571,7 +3571,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.10.29
       caniuse-lite: 1.0.30001792
-      electron-to-chromium: 1.5.355
+      electron-to-chromium: 1.5.356
       node-releases: 2.0.44
       update-browserslist-db: 1.2.3(browserslist@4.28.2)
 
@@ -3708,7 +3708,7 @@ snapshots:
     dependencies:
       jake: 10.9.4
 
-  electron-to-chromium@1.5.355: {}
+  electron-to-chromium@1.5.356: {}
 
   enhanced-resolve@5.21.3:
     dependencies:
@@ -4920,7 +4920,7 @@ snapshots:
       '@types/trusted-types': 2.0.7
       workbox-core: 7.4.1
 
-  yahoo-finance2@3.14.0:
+  yahoo-finance2@3.14.1:
     dependencies:
       '@deno/shim-deno': 0.18.2
       fetch-mock-cache: 2.3.1
