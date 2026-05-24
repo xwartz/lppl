@@ -11,8 +11,6 @@ import {
   YAxis,
 } from 'recharts'
 import { useI18n } from '../lib/i18n'
-import type { ThemePref } from '../lib/theme-context'
-import { useTheme } from '../lib/theme-context'
 
 interface Point {
   date: string
@@ -29,7 +27,6 @@ interface Props {
 }
 
 const PriceChart: React.FC<Props> = ({ data, priceFormatter, criticalDate, predictedPrice }) => {
-  const { theme } = useTheme()
   const { t } = useI18n()
   const [chartHeight, setChartHeight] = useState<number>(400)
   const [showFullRange, setShowFullRange] = useState<boolean>(false)
@@ -140,36 +137,19 @@ const PriceChart: React.FC<Props> = ({ data, priceFormatter, criticalDate, predi
     return () => window.removeEventListener('resize', calc)
   }, [])
 
-  // Detect system dark mode when theme is 'system'
-  const systemDark =
-    typeof window !== 'undefined' &&
-    window.matchMedia &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  const isDark =
-    theme === ('dark' as ThemePref) || (theme === ('system' as ThemePref) && systemDark)
+  const gridStroke = 'var(--border)'
+  const axisColor = 'var(--muted)'
+  const actualLineColor = 'var(--info)'
+  const fittedLineColor = 'var(--accent)'
+  const criticalColor = 'var(--warning)'
 
-  // Chart colors based on theme
-  const gridStroke = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
-  const axisColor = isDark ? '#737373' : '#737373'
-  const actualLineColor = isDark ? '#06b6d4' : '#0284c7'
-  const fittedLineColor = isDark ? '#fafafa' : '#171717'
-  const criticalColor = isDark ? '#f59e0b' : '#d97706'
-
-  const tooltipStyle = isDark
-    ? {
-        backgroundColor: '#171717',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '8px',
-        color: '#ffffff',
-        padding: '12px',
-      }
-    : {
-        backgroundColor: '#ffffff',
-        border: '1px solid rgba(0,0,0,0.08)',
-        borderRadius: '8px',
-        color: '#000000',
-        padding: '12px',
-      }
+  const tooltipStyle = {
+    backgroundColor: 'var(--card-bg)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    color: 'var(--text)',
+    padding: '12px',
+  }
 
   // Custom label for critical point
   const CriticalLabel = ({ viewBox }: { viewBox?: { x?: number; y?: number } }) => {
@@ -223,14 +203,7 @@ const PriceChart: React.FC<Props> = ({ data, priceFormatter, criticalDate, predi
           style={{ animationDuration: '2s' }}
         />
         {/* Main dot */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={6}
-          fill={criticalColor}
-          stroke={isDark ? '#000' : '#fff'}
-          strokeWidth={2}
-        />
+        <circle cx={cx} cy={cy} r={6} fill={criticalColor} stroke="var(--bg)" strokeWidth={2} />
       </g>
     )
   }
@@ -272,17 +245,17 @@ const PriceChart: React.FC<Props> = ({ data, priceFormatter, criticalDate, predi
 
       <ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart data={extendedData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-          <CartesianGrid strokeDasharray="4 4" stroke={gridStroke} />
+          <CartesianGrid strokeDasharray="4 4" stroke={gridStroke} strokeOpacity={0.35} />
           <XAxis
             dataKey="date"
             stroke={axisColor}
             tick={{ fontSize: 12, fill: axisColor }}
-            tickLine={{ stroke: gridStroke }}
+            tickLine={{ stroke: gridStroke, strokeOpacity: 0.35 }}
           />
           <YAxis
             stroke={axisColor}
             tick={{ fontSize: 12, fill: axisColor }}
-            tickLine={{ stroke: gridStroke }}
+            tickLine={{ stroke: gridStroke, strokeOpacity: 0.35 }}
             domain={['dataMin', 'dataMax']}
             tickFormatter={(v: number) => priceFormatter(v)}
           />

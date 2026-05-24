@@ -1,14 +1,13 @@
 export const en = {
   // App header
-  'app.title': 'LPPL Bubble Tracker',
-  'nav.crypto': 'Cryptocurrency',
-  'nav.stocks': 'Stock Market',
+  'app.title': 'LPPL Tracker',
+  'nav.crypto': 'Crypto',
+  'nav.stocks': 'Stocks',
   'nav.commodities': 'Commodities',
 
   // SEO & Meta
-  'meta.title': 'LPPL Bubble Tracker - Financial Bubble Warning System',
-  'meta.description':
-    'LPPL model-based financial bubble tracking tool that monitors bubble risks in cryptocurrency and stock markets in real-time, providing professional market warning analysis.',
+  'meta.title': 'LPPL Tracker | Bubble Risk Signals',
+  'meta.description': 'Track bubble risk signals for crypto, stocks, and commodities with LPPL.',
   'meta.keywords':
     'LPPL, Financial Bubble, Cryptocurrency, Stock Market, Market Warning, Bubble Detection',
 
@@ -16,15 +15,19 @@ export const en = {
   'theme.toggle': 'Toggle theme',
 
   // Asset Selector
-  'asset.select': 'Select Asset',
+  'asset.select': 'Asset',
   'asset.crypto.bitcoin': 'Bitcoin (BTC)',
   'asset.crypto.ethereum': 'Ethereum (ETH)',
   'asset.crypto.custom': 'Custom',
   'asset.stock.sp500': 'S&P 500 (SPY)',
   'asset.stock.nasdaq': 'NASDAQ (QQQ)',
   'asset.stock.custom': 'Custom',
+  'asset.commodity.gold': 'Gold',
+  'asset.commodity.silver': 'Silver',
+  'asset.commodity.crude': 'Crude Oil',
+  'asset.suggestions': 'Watchlist',
   'asset.enter.symbol': 'Enter Symbol',
-  'asset.timeframe': 'Timeframe',
+  'asset.timeframe': 'Range',
   'asset.days': 'Days',
   'asset.analyze': 'Analyze',
 
@@ -39,14 +42,11 @@ export const en = {
   'lppl.critical.time': 'Critical Time',
   'lppl.days.remaining': 'Days Remaining',
   'lppl.interpretation': 'Interpretation',
-  'lppl.interpretation.bubble':
-    'The market shows significant bubble characteristics, and prices may be approaching a critical point. It is recommended to closely monitor market dynamics and carefully control risks.',
+  'lppl.interpretation.bubble': 'Bubble signals are strong. Stay cautious and manage risk tightly.',
   'lppl.interpretation.moderate':
-    'The market shows some bubble characteristics, but has not reached extreme levels. It is recommended to remain vigilant and moderately control positions.',
-  'lppl.interpretation.normal':
-    'The market is in a relatively healthy state, with no obvious bubble risks detected. You can maintain a normal investment strategy.',
-  'lppl.interpretation.nodata':
-    'Insufficient data for analysis. Please select another asset or adjust the timeframe.',
+    'Bubble signals are building. Stay alert and size positions carefully.',
+  'lppl.interpretation.normal': 'No strong bubble signal right now.',
+  'lppl.interpretation.nodata': 'Not enough data. Try another asset or range.',
 
   // Price Chart
   'chart.title': 'Price Trend',
@@ -55,17 +55,17 @@ export const en = {
   'chart.actual': 'Actual Price',
   'chart.fitted': 'LPPL Fit',
   'chart.critical': 'Critical Time',
-  'chart.critical.point': '⚠ Critical Point',
+  'chart.critical.point': 'Critical',
   'chart.loading': 'Loading...',
   'chart.error': 'Load Failed',
-  'chart.price.fit': 'Price & LPPL Fit Curve',
-  'chart.warning.far': '⚠️ Critical Point Deviation',
+  'chart.price.fit': 'Price vs LPPL',
+  'chart.warning.far': 'Critical point off-scale',
   'chart.warning.far.desc':
-    'Predicted critical price {price} deviates significantly from current price range. Full range hidden for readability.',
+    'Critical price {price} sits well outside the current range. Full range is hidden to keep the chart readable.',
   'chart.show.full': 'Show Full Range',
-  'chart.showing.full': 'Showing Full Price Range',
-  'chart.focus.history': 'Focus on Historical Data',
-  'chart.interaction.hint': 'Use mouse wheel to zoom, drag to pan, hover for details',
+  'chart.showing.full': 'Full range enabled',
+  'chart.focus.history': 'Focus history',
+  'chart.interaction.hint': 'Scroll to zoom, drag to pan, hover for values',
   'chart.zoom.in': 'Zoom In',
   'chart.zoom.out': 'Zoom Out',
   'chart.reset': 'Reset View',
@@ -105,56 +105,57 @@ export const en = {
 
   // Advanced Settings
   'advanced.settings': 'Advanced',
-  'advanced.model.config': 'Model Configuration',
-  'advanced.apply.hint': 'Press Enter or blur to apply',
+  'advanced.model.config': 'Model settings',
+  'advanced.apply.hint': 'Enter or blur to apply',
   'advanced.max.iterations': 'Max Iterations',
   'advanced.restarts': 'Restarts',
   'advanced.tolerance': 'Tolerance',
 
   // Time Range
-  'time.custom': 'Custom Range',
+  'time.custom': 'Custom',
   'time.to': 'to',
   'time.last': 'Last',
   'time.days': 'days',
-  'time.refresh': 'Refresh',
+  'time.refresh': 'Update',
   'time.refreshing': 'Refreshing...',
   'time.invalid.date': 'Invalid custom date range',
 
   // Risk Level
-  'risk.level': 'Risk Level',
+  'risk.level': 'Risk',
   'risk.high': 'High Risk',
   'risk.medium': 'Medium Risk',
   'risk.low': 'Low Risk',
-  'risk.reason.unreliable': 'Unreliable fit (residual too large or numerical anomaly)',
-  'risk.reason.critical.passed': 'Predicted critical date has passed',
-  'risk.reason.critical.near': 'Critical date approaching (<30 days)',
-  'risk.reason.critical.soon': 'Critical date within 60 days',
-  'risk.reason.price.surge': 'Recent rapid price increase (>10%)',
-  'risk.reason.price.rise': 'Recent price increase (>5%)',
+  'risk.reason.unreliable': 'Fit is unstable',
+  'risk.reason.critical.passed': 'Critical date has passed',
+  'risk.reason.critical.near': 'Critical date in under 30 days',
+  'risk.reason.critical.soon': 'Critical date in 60 days',
+  'risk.reason.price.surge': 'Price up more than 10% recently',
+  'risk.reason.price.rise': 'Price up more than 5% recently',
 
   // Critical Point
-  'critical.point': 'Predicted Critical Point',
-  'critical.price': 'Predicted Critical Price',
+  'critical.point': 'Critical point',
+  'critical.price': 'Critical price',
   'critical.days.after': 'days from now',
   'critical.days.before': 'days ago',
   'critical.today': 'within 24 hours',
   'critical.about': 'About',
 
   // Model Fit
-  'model.fit': 'Model Fit Quality',
-  'model.residual': 'Residual (lower is better)',
-  'model.status': 'Fit Status',
-  'model.converged': '✓ Converged',
-  'model.not.converged': '⚠ Not Fully Converged',
+  'model.fit': 'Fit quality',
+  'model.residual': 'Residual',
+  'model.status': 'Status',
+  'model.converged': 'Converged',
+  'model.not.converged': 'Not converged',
 
   // Placeholders
   'placeholder.crypto.symbol': 'e.g. BTCUSDT',
   'placeholder.stock.symbol': 'e.g. AAPL',
+  'placeholder.commodity.symbol': 'e.g. GC=F',
   'aria.crypto': 'Enter trading pair',
   'aria.stock': 'Enter stock symbol',
+  'aria.commodity': 'Enter commodity symbol',
 
   // Footer
-  'footer.about': 'About LPPL',
-  'footer.disclaimer':
-    '⚠️ Disclaimer: LPPL model is for reference only and does not constitute investment advice.',
+  'footer.about': 'About',
+  'footer.disclaimer': 'LPPL is a reference signal, not investment advice.',
 }

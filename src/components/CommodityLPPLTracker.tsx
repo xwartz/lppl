@@ -52,16 +52,16 @@ const CommodityLPPLTracker: React.FC = () => {
   }
 
   const defaultCommodities = [
-    { label: 'Gold', value: 'GC=F' },
-    { label: 'Silver', value: 'SI=F' },
-    { label: 'Crude Oil', value: 'CL=F' },
+    { label: t('asset.commodity.gold'), value: 'GC=F' },
+    { label: t('asset.commodity.silver'), value: 'SI=F' },
+    { label: t('asset.commodity.crude'), value: 'CL=F' },
   ]
 
   return (
     <LPPLTrackerBase
       initialSymbol="GC=F"
-      placeholder="Commodity (e.g. GC=F)"
-      ariaLabel="Commodities"
+      placeholder={t('placeholder.commodity.symbol')}
+      ariaLabel={t('aria.commodity')}
       validateSymbol={validateSymbol}
       fetchSeries={fetchSeries}
       priceFormatter={priceFmt}

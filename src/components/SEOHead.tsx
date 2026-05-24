@@ -19,6 +19,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({ title, description, keywords, path = 
   const metaTitle = title || t('meta.title')
   const metaDescription = description || t('meta.description')
   const metaKeywords = keywords || t('meta.keywords')
+  const siteName = t('app.title')
   const defaultImage = `${siteUrl}/og-image.png`
   const metaImage = imageUrl || defaultImage
 
@@ -50,7 +51,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({ title, description, keywords, path = 
     updateMetaTag('og:url', currentUrl, true)
     updateMetaTag('og:type', 'website', true)
     updateMetaTag('og:image', metaImage, true)
-    updateMetaTag('og:site_name', 'LPPL Bubble Tracker', true)
+    updateMetaTag('og:site_name', siteName, true)
 
     // Twitter Card tags
     updateMetaTag('twitter:card', 'summary_large_image')
@@ -66,7 +67,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({ title, description, keywords, path = 
       document.head.appendChild(canonical)
     }
     canonical.setAttribute('href', currentUrl)
-  }, [metaTitle, metaDescription, metaKeywords, currentUrl, metaImage])
+  }, [metaTitle, metaDescription, metaKeywords, currentUrl, metaImage, siteName])
 
   return null
 }

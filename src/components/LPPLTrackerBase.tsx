@@ -257,7 +257,7 @@ const LPPLTrackerBase: React.FC<Props> = ({
                     <div className="absolute top-12 left-0 z-50 w-[300px] bg-card border border-border-var rounded-lg shadow-xl p-3 hidden group-focus-within:block hover:block">
                       <div className="flex items-center justify-between mb-2 px-1">
                         <span className="text-xs font-medium text-muted">
-                          {t('stock.suggestions') || 'Popular Assets'}
+                          {t('asset.suggestions')}
                         </span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">

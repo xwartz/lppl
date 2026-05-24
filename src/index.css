@@ -385,8 +385,19 @@ button:active:not(:disabled) {
   transition: transform 100ms ease-out;
 }
 
+/* Click affordance */
+button:not(:disabled),
+a[href],
+summary,
+[role="button"]:not([aria-disabled="true"]),
+select,
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
 /* Smooth transitions for interactive elements */
 button,
+a[href],
 input,
 select,
 .btn-primary,
