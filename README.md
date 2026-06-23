@@ -1,77 +1,52 @@
 # ![LPPL Tracker](https://img.shields.io/badge/BTC-LPPL%20Tracker-orange?style=for-the-badge&logo=bitcoin)
 
-**LPPL** 是 **对数周期性幂律模型** 的缩写，也称为 **JLS 模型**（以其三位创始人 Johansen-Ledoit-Sornette 的名字命名）。
+[中文](README.zh.md)
 
-其核心思想是：**金融泡沫是由正反馈机制驱动的，这种机制会导致价格以超指数增长，同时伴随着围绕这一增长路径的、频率不断增加的振荡（对数周期性振荡）。**
+LPPL Tracker is a technical tool for fitting the Log-Periodic Power Law model to crypto, stock, and commodity price series. It helps identify bubble-like price behavior, estimate a critical time window, and compare fit quality across assets.
 
-## 核心公式
+LPPL stands for **Log-Periodic Power Law**. The model is also known as the **JLS model**, after Johansen, Ledoit, and Sornette.
+
+## What LPPL Models
+
+The LPPL model describes financial bubbles as positive-feedback processes. During a bubble, price may rise faster than an exponential trend while showing oscillations that become more frequent as the market approaches a critical time.
+
+LPPL does not predict an exact crash date. It estimates a high-risk window where the current price regime is more likely to break or change.
+
+## Core Formula
 
 ```math
-ln[p(t)] = A + B(t_c-t)^{m}+C(t_c-t)^{m}\cos[\omega\ ln(t_c-t) + \phi]
+\ln[p(t)] = A + B(t_c-t)^m + C(t_c-t)^m\cos[\omega\ln(t_c-t)+\phi]
 ```
 
-### 变量与参数解释
+## Parameters
 
-| 符号            | 含义                                            | 说明                                                                                                                                    |
-| :-------------- | :---------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| $P(t)$      | 在时间 $t$ 时的资产价格                     | -                                                                                                                                       |
-| $ln[p(t)]$ | 价格的自然对数                                  | 使用对数价格是金融建模的常见做法。                                                                                                      |
-| $t$         | 当前时间                                        | -                                                                                                                                       |
-| $t_c$       | **临界时间** 或 **破裂时间**                    | 模型预测泡沫最可能破裂、价格发生剧烈逆转的时间点。是模型拟合的关键参数。                                                                |
-| $A$         | 当 $t$ -> $t_c$ 时, $ln[p(t)]$ 的期望值 | 可以理解为泡沫顶峰时期的对数价格水平。                                                                                                  |
-| $B$         | **增长幅度系数**                                | **$B$ < 0** 表示正向泡沫（价格加速上涨）；**$B$ > 0** 表示负向泡沫（价格加速下跌）。                                            |
-| $m$         | **幂律指数** 或 **临界指数**                    | 通常在 0 < $m$ < 1 之间。它确保了当时间接近 $t_c$ 时，增长率会趋向于无穷大（奇点），但价格本身有限。它控制了增长/衰减的加速度。 |
-| $C$         | **振荡幅度系数**                                | 控制了价格围绕趋势线振荡的幅度。                                                                                                        |
-| $\omega$    | **振荡频率**                                    | 决定了在泡沫破裂前，价格会发生多少次“摇摆”或“回调/反弹”。                                                                               |
-| $\phi$      | **相位参数**                                    | 决定了振荡的起始相位。                                                                                                                  |
+| Symbol | Meaning | Notes |
+| :-- | :-- | :-- |
+| $p(t)$ | Asset price at time $t$ | The model fits the natural log of price. |
+| $t$ | Current time | Usually normalized to days in this project. |
+| $t_c$ | Critical time | Estimated time window where the bubble is most likely to break or change state. |
+| $A$ | Expected log price near $t_c$ | The project uses $\exp(A)$ as the predicted critical price. |
+| $B$ | Power-law trend coefficient | For a rising bubble, the usual constraint is $B < 0$. |
+| $C$ | Oscillation amplitude | Controls how strongly price oscillates around the trend. |
+| $m$ | Power-law exponent | Usually constrained to $0 < m < 1$. |
+| $\omega$ | Log-periodic frequency | Controls how many oscillations appear before $t_c$. |
+| $\phi$ | Phase | Sets the starting phase of the oscillation. |
 
+## How to Read the Result
 
-## 公式组成部分解析
+- **Fit quality**: lower RMSE means the fitted curve is closer to the observed log price, but RMSE alone is not enough.
+- **Critical date**: the estimated center of a high-risk window, not a deterministic forecast.
+- **Predicted critical price**: derived from $\exp(A)$, with a simple confidence interval when the fit supports it.
+- **Confidence**: based on nested-window scans. Higher values mean more windows produced valid LPPL fits under the configured filters.
 
-### 1. 幂律增长项: $A + B(t_c - t)^{m}$
+## Important Limits
 
-这一项描述了价格朝向临界时间的超指数增长或衰减。
-*   $B(t_c - t)^{m}$ 是核心。随着 $(t_c - t)$ 变小（即越来越接近临界时间），这一项（在 $B<0$ 的情况下）会驱动价格加速上升。
+- LPPL is a risk signal, not a trading signal.
+- The model is sensitive to the selected time window and initial conditions.
+- False positives are possible, especially outside clear bubble regimes.
+- Historical bubbles often fit LPPL well after the fact. Real-time prediction is harder and should be treated cautiously.
 
-### 2. 对数周期性振荡项: $C(t_c - t)^{m} \cos[\omega\ ln(t_c - t) + \phi]$
+## Documentation
 
-这一项是 LPPL 模型的灵魂，它描述了价格在奔向 $t_c$ 的过程中，不是平滑的，而是围绕着幂律趋势上下振荡。
-
-**关键洞察**：振荡的周期不是固定的，而是随着接近 $t_c$ 而不断缩短。这是因为振荡的自变量是 $ln(t_c - t)$，而不是简单的 $t$。这意味着在泡沫的后期，价格的波动会越来越频繁，反映了交易者之间越来越不稳定的共识和分歧。
-
-
-## 参数的物理意义与约束
-
-为了使模型描述的是一个不稳定的正反馈泡沫（而非普通的指数增长），模型参数必须满足一定的约束条件，这些约束来自于交易者行为的“自组织临界”理论：
-
-| 参数         | 约束条件                         | 物理意义                                                                        |
-| :----------- | :------------------------------- | :------------------------------------------------------------------------------ |
-| $m$      | 0 < $m$ < 1                  | 确保增长是超指数的（加速度越来越大），但在 $t_c$ 时刻价格本身是有限的。     |
-| $B$      | $B$ < 0 (对于价格上涨的泡沫) | 负值确保了随着 $(t_c - t)$ -> 0, $B(t_c - t)^{m}$ 项会驱动价格急剧上升。 |
-| $\omega$ | $\omega$ > 0                 | 振荡频率必须为正。                                                              |
-| $\phi$   | 通常限制在 $[0, 2\pi]$       | 相位参数的常见范围。                                                            |
-
-
-## 模型使用方法
-
-1.  **数据准备**
-    *   选取一段你认为可能存在泡沫的资产价格时间序列数据（例如，比特币价格等）。
-
-2.  **参数拟合**
-    *   使用非线性回归或类似的优化算法，将 LPPL 公式拟合到你的价格数据 $ln[p(t)]]$ 上。
-    *   目标是找到一组参数 ${A, B, C, t_c, m, \omega, \phi}$，使得模型计算出的值与实际价格数据的误差（如残差平方和）最小。
-
-3.  **诊断与预测**
-    *   **诊断**：检查拟合出的参数是否满足上述约束条件（0 < $m$ < 1, $B$ < 0 等）。如果满足，说明这段数据确实符合泡沫特征。
-    *   **预测**：拟合得到的 $t_c$ 就是模型预测的泡沫最可能破裂的时间点。
-    *   **风险评估**：可以通过计算 **Hazard Rate**（在 $t_c$ 附近破裂的条件概率）来更量化地评估破裂风险。
-
-
-## 注意事项
-
-*   **不是水晶球**：LPPL 模型是一个基于统计物理的**概率模型**，而非确定性预言。它指示的是一个**高风险的时间窗口**，而非精确的秒针时刻。
-*   **参数敏感性与拟合难度**：模型有 7 个参数，非线性程度很高，拟合过程可能不稳定，容易陷入局部最优解。不同的初始值可能会得出不同的 $t_c$ 预测。
-*   **假信号**：模型可能会在非泡沫时期也产生看似合理的拟合结果（假阳性）。
-*   **事后解释性强，事前预测难**：在很多历史著名泡沫（1987 年股灾、2000 年互联网泡沫、2008 年金融危机、2017 年比特币泡沫）中，LPPL 模型都显示出很好的**事后**拟合效果。但其真正的**事前**预测成功率仍有争议。
-
-> **总而言之，LPPL 公式提供了一个强大的数学框架来理解和量化金融市场的非理性繁荣和恐慌，但它应该被用作一个复杂的风险预警工具，而非一个简单的买卖信号发生器。**
+- [LPPL Guide](docs/LPPL-Guide.md)
+- [Stock API Setup Guide](docs/API-SETUP.md)

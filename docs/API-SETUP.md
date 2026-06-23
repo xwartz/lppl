@@ -1,81 +1,113 @@
 # Stock API Setup Guide
 
-## 问题
-Yahoo Finance API 在 Vercel 上容易触发速率限制（"Too Many Requests"），因为 Vercel 使用共享 IP 池。
+[中文](API-SETUP.zh.md)
 
-## 解决方案
-实现多数据源策略：
-1. **Primary**: Yahoo Finance (yahoo-finance2)
-2. **Fallback 1**: Twelve Data (推荐，800 次/天)
-3. **Fallback 2**: Alpha Vantage (25 次/天)
+This project fetches stock and commodity history through `api/stock/historical.ts`. The browser should call this server endpoint instead of calling market data providers directly.
 
-## 快速设置
+## Why This Exists
 
-### 选项 1：Twelve Data (推荐)
-最佳免费额度，800 次请求/天
+Yahoo Finance can hit rate limits on Vercel because serverless deployments may share outbound IP addresses. The API proxy keeps the browser code simple and lets the server fall back to other providers when Yahoo Finance fails.
 
-1. 注册账号：https://twelvedata.com/pricing
-2. 获取免费 API Key
-3. 在 Vercel 环境变量中设置：
-   ```
-   TWELVE_DATA_API_KEY=your_key_here
-   ```
+## Data Source Order
 
-### 选项 2：Alpha Vantage
-备用方案，25 次请求/天
+1. **Yahoo Finance** via `yahoo-finance2`
+2. **Twelve Data** when `TWELVE_DATA_API_KEY` is configured
+3. **Alpha Vantage** using `ALPHA_VANTAGE_API_KEY`, or the Alpha Vantage `demo` key when the variable is missing
 
-1. 获取免费 API Key：https://www.alphavantage.co/support/#api-key
-2. 在 Vercel 环境变量中设置：
-   ```
-   ALPHA_VANTAGE_API_KEY=your_key_here
-   ```
+Twelve Data is tried before Alpha Vantage because its free quota is higher.
 
-## 工作流程
+## Environment Variables
 
-1. **首次尝试 Yahoo Finance**
-   - 如果成功 → 返回数据（标记为 `X-Data-Source: yahoo`）
-   - 如果失败（429） → 快速重试一次
+### Recommended: Twelve Data
 
-2. **Yahoo 失败后自动切换**
-   - 优先尝试 Twelve Data（如果配置了 API key）
-   - 再尝试 Alpha Vantage
-   - 都失败则返回错误提示
+Twelve Data provides a larger free quota than Alpha Vantage.
 
-3. **缓存策略**
-   - 内存缓存：1 小时
-   - Edge 缓存：1 小时（Vercel CDN）
-   - stale-while-revalidate：2 小时
+1. Create an account: <https://twelvedata.com/pricing>
+2. Get a free API key.
+3. Add this variable in Vercel:
 
-## 部署步骤
+```bash
+TWELVE_DATA_API_KEY=your_key_here
+```
 
-1. 配置环境变量（Vercel Dashboard）：
-   ```bash
-   # 推荐至少配置一个
-   TWELVE_DATA_API_KEY=xxx
-   ALPHA_VANTAGE_API_KEY=xxx
-   ```
+### Optional: Alpha Vantage
 
-2. 部署：
-   ```bash
-   git push
-   ```
+Alpha Vantage is the last fallback. The free quota is small, so it is best used as a backup.
 
-3. 验证：
-   - 检查响应头 `X-Data-Source` 查看使用的数据源
-   - 检查响应头 `X-Cache` 查看是否命中缓存
+1. Get a free API key: <https://www.alphavantage.co/support/#api-key>
+2. Add this variable in Vercel:
 
-## 注意事项
+```bash
+ALPHA_VANTAGE_API_KEY=your_key_here
+```
 
-- 即使不配置备用 API，Yahoo Finance 在未被限制时仍可正常使用
-- 配置了 TWELVE_DATA_API_KEY 后，系统会优先使用它作为备用（更高的速率限制）
-- Alpha Vantage 使用 "demo" key 也能工作，但限制极严格
-- 缓存时间较长（1小时），适合历史数据查询
+## Request Parameters
 
-## 成本
+`GET /api/stock/historical`
 
-所有推荐的 API 都有**完全免费**的额度：
-- Yahoo Finance: 无限制（但会被限速）
-- Twelve Data: 800 次/天（免费）
-- Alpha Vantage: 25 次/天（免费）
+| Parameter | Required | Description |
+| :-- | :-- | :-- |
+| `symbol` | Yes | Market symbol, converted to uppercase on the server. |
+| `interval` | No | `1d`, `1wk`, or `1mo`. Defaults to `1d`. |
+| `start` and `end` | No | Date strings or millisecond timestamps. Both must be present when used. |
+| `rangeDays` | No | Lookback window in days when `start` and `end` are not provided. Defaults to `200`. |
 
-结合 1 小时缓存，对于大多数应用场景完全足够。
+The response shape is:
+
+```json
+{
+  "symbol": "AAPL",
+  "interval": "1d",
+  "points": [{ "time": 1719792000000, "close": 216.75 }]
+}
+```
+
+## Runtime Behavior
+
+1. The endpoint checks the in-memory cache first.
+2. On cache miss, it tries Yahoo Finance.
+3. If Yahoo Finance fails, it retries once for rate-limit errors.
+4. If Yahoo still fails, it tries Twelve Data when `TWELVE_DATA_API_KEY` exists.
+5. If no Twelve Data result is available, it tries Alpha Vantage.
+6. If every provider fails, the endpoint returns a `500` response with an error message.
+
+## Caching
+
+- In-memory cache: 1 hour
+- Vercel CDN cache: `s-maxage=3600`
+- Stale revalidation window: `stale-while-revalidate=7200`
+
+Successful responses include:
+
+- `X-Cache: HIT` or `MISS`
+- `X-Data-Source: yahoo`, `twelvedata`, or `alphavantage` on cache misses
+
+## Deployment
+
+1. Add at least one fallback API key in Vercel when possible:
+
+```bash
+TWELVE_DATA_API_KEY=xxx
+ALPHA_VANTAGE_API_KEY=xxx
+```
+
+2. Deploy the app:
+
+```bash
+git push
+```
+
+3. Verify a response:
+
+```bash
+curl -I "https://your-domain.example/api/stock/historical?symbol=AAPL&rangeDays=30"
+```
+
+Check `X-Data-Source` and `X-Cache` in the response headers.
+
+## Notes
+
+- Yahoo Finance can work without fallback keys, but it is more exposed to rate limits.
+- Twelve Data is the preferred fallback when available.
+- Alpha Vantage can run with the `demo` key, but the limits are strict.
+- The 1-hour cache is intentional because this endpoint is used for historical data.
