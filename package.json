@@ -14,20 +14,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.27.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
-    "recharts": "^3.9.2",
+    "recharts": "^3.10.1",
     "yahoo-finance2": "^4.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.2",
+    "@biomejs/biome": "^2.5.5",
     "@tailwindcss/vite": "^4.3.2",
     "@types/node": "^26.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
+    "@vitejs/plugin-react": "^6.0.4",
     "tailwindcss": "^4.3.2",
     "typescript": "~7.0.0",
     "vite": "^8.1.3",
