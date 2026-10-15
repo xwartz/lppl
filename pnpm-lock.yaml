@@ -25,7 +25,7 @@ importers:
         version: 3.10.1(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react-is@19.2.0)(react@19.3.0)(redux@5.0.1)
       yahoo-finance2:
         specifier: ^4.0.2
-        version: 4.0.3
+        version: 4.0.4
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.15
@@ -2789,8 +2789,8 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  yahoo-finance2@4.0.3:
-    resolution: {integrity: sha512-2Bq74N+2obA+37wvA9KCsRiaShNm92kMdPnIKwn3ofnkvKzAMMJ1ZZUrEHst7lxsQnCSzaEs5mY76ATkIb/NMg==}
+  yahoo-finance2@4.0.4:
+    resolution: {integrity: sha512-RqQgbziZFTShcuKT6pE7POzW867iqigkUfpLi2TLdhlQWHvHp+0K9EDmQhIJnpRRFHeeRNALVKSVqO6tK1xPTQ==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -5644,7 +5644,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  yahoo-finance2@4.0.3:
+  yahoo-finance2@4.0.4:
     dependencies:
       '@deno/shim-deno': 0.18.2
       '@modelcontextprotocol/sdk': 1.32.0(zod@4.6.5)
