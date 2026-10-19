@@ -14,12 +14,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^1.53.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "lucide-react": "^1.57.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4",
     "recharts": "^3.9.2",
-    "yahoo-finance2": "^4.0.2"
+    "yahoo-finance2": "^4.0.4"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
