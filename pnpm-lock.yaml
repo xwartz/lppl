@@ -25,7 +25,7 @@ importers:
         version: 3.10.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@19.2.0)(react@19.3.1)(redux@5.0.1)
       yahoo-finance2:
         specifier: ^4.0.4
-        version: 4.0.4
+        version: 4.0.5
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.15
@@ -1280,6 +1280,11 @@ packages:
 
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
+    peerDependencies:
+      ajv: ^8.0.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
 
   ajv@8.20.0:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
@@ -2789,8 +2794,8 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  yahoo-finance2@4.0.4:
-    resolution: {integrity: sha512-RqQgbziZFTShcuKT6pE7POzW867iqigkUfpLi2TLdhlQWHvHp+0K9EDmQhIJnpRRFHeeRNALVKSVqO6tK1xPTQ==}
+  yahoo-finance2@4.0.5:
+    resolution: {integrity: sha512-y+ZKQgbyWivjVoGNY5x7bf/CBYruZMb97qqOqz4NcKdDonoE6fH5ac5OCNzFRaXn2hop2Coi4H0imQZiI4P0uw==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -5644,7 +5649,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  yahoo-finance2@4.0.4:
+  yahoo-finance2@4.0.5:
     dependencies:
       '@deno/shim-deno': 0.18.2
       '@modelcontextprotocol/sdk': 1.32.0(zod@4.6.5)
